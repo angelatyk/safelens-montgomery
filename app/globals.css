@@ -1,26 +1,454 @@
+/* =============================================================================
+   SafeLens Montgomery — Global Design System
+   Framework: Tailwind CSS v4 (CSS-first configuration via @theme)
+   Design Reference: Stitch "Resident Safety Dashboard"
+   ============================================================================= */
+
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =============================================================================
+   THEME — All design tokens are defined here.
+   Tailwind v4 reads @theme to generate utility classes automatically.
+   Convention: semantic tokens reference primitive tokens via var().
+   ============================================================================= */
+
+@theme {
+  /* ---------------------------------------------------------------------------
+     Typography
+     Primary: Inter (humanist sans-serif, excellent UI legibility)
+     Mono: Geist Mono (for data values, IDs, code snippets)
+  --------------------------------------------------------------------------- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", monospace;
+
+  /* Type scale — fluid, 1.25 ratio */
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.25rem;
+  /* 20px */
+  --text-2xl: 1.5rem;
+  /* 24px */
+  --text-3xl: 1.875rem;
+  /* 30px */
+  --text-4xl: 2.25rem;
+  /* 36px */
+
+  /* Font weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line heights */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Letter spacing */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-widest: 0.1em;
+
+  /* ---------------------------------------------------------------------------
+     Primitive Color Palette
+     Based on Stitch design: dark zinc foundation + vibrant blue accent
+     Zinc scale provides the dark UI canvas.
+     Blue scale anchors the brand / interactive elements.
+  --------------------------------------------------------------------------- */
+
+  /* Navy (Dark UI Surfaces — sampled directly from Stitch screenshots)
+     These are blue-tinted dark tones, NOT neutral gray.
+     Canvas anchor: #0B0F17  Surface: #131926  Elevated: #1C2235 */
+  --color-navy-950: #080c13;
+  /* Page root / outermost bg */
+  --color-navy-900: #0b0f17;
+  /* Canvas — main page background */
+  --color-navy-850: #0f1420;
+  /* Sidebar panels */
+  --color-navy-800: #131926;
+  /* Card / surface default */
+  --color-navy-750: #1a2235;
+  /* Elevated cards, table rows */
+  --color-navy-700: #1e2840;
+  /* Hover state on cards */
+  --color-navy-600: #253050;
+  /* Active nav item background */
+  --color-navy-500: #3a4a6b;
+  /* Subtle text decoration */
+  --color-navy-400: #5a6a8a;
+  /* Tertiary / muted borders */
+  --color-navy-300: #8a9ab8;
+  /* Secondary text */
+  --color-navy-200: #b8c4d8;
+  /* Primary text (dimmed) */
+  --color-navy-100: #dce3ef;
+  /* Light body text */
+  --color-navy-50: #f0f3f8;
+  /* Near-white — headings */
+
+  /* Blue (Brand Primary — from Stitch: #1152d4) */
+  --color-blue-950: #0c1a5c;
+  --color-blue-900: #0f2380;
+  --color-blue-800: #1035a8;
+  --color-blue-700: #1243c3;
+  --color-blue-600: #1152d4;
+  /* ← Stitch Brand Primary */
+  --color-blue-500: #2563eb;
+  --color-blue-400: #3b82f6;
+  --color-blue-300: #93c5fd;
+  --color-blue-200: #bfdbfe;
+  --color-blue-100: #dbeafe;
+  --color-blue-50: #eff6ff;
+
+  /* Status Colors — used for incident severity, alert types, and signals */
+
+  /* Red — Critical / High Severity */
+  --color-red-900: #450a0a;
+  --color-red-800: #7f1d1d;
+  --color-red-600: #dc2626;
+  --color-red-500: #ef4444;
+  --color-red-400: #f87171;
+  --color-red-200: #fecaca;
+  --color-red-100: #fee2e2;
+
+  /* Amber — Warning / Medium Severity */
+  --color-amber-900: #451a03;
+  --color-amber-800: #78350f;
+  --color-amber-600: #d97706;
+  --color-amber-500: #f59e0b;
+  --color-amber-400: #fbbf24;
+  --color-amber-200: #fde68a;
+  --color-amber-100: #fef3c7;
+
+  /* Green — Resolved / Low Severity / Verified */
+  --color-green-900: #052e16;
+  --color-green-800: #166534;
+  --color-green-600: #16a34a;
+  --color-green-500: #22c55e;
+  --color-green-400: #4ade80;
+  --color-green-200: #bbf7d0;
+  --color-green-100: #dcfce7;
+
+  /* Purple — AI / Predictive / Intelligence layer */
+  --color-purple-900: #2e1065;
+  --color-purple-800: #3b0764;
+  --color-purple-600: #7c3aed;
+  --color-purple-500: #8b5cf6;
+  --color-purple-400: #a78bfa;
+  --color-purple-200: #ddd6fe;
+  --color-purple-100: #ede9fe;
+
+  /* ---------------------------------------------------------------------------
+     Semantic Color Tokens
+     Components reference these, never raw primitives directly.
+     This layer makes theming (light/dark switching) trivial.
+  --------------------------------------------------------------------------- */
+
+  /* Backgrounds */
+  --color-bg-canvas: var(--color-navy-900);
+  /* App root / page (#0b0f17) */
+  --color-bg-surface: var(--color-navy-800);
+  /* Cards, panels, sidebars (#131926) */
+  --color-bg-elevated: var(--color-navy-750);
+  /* Modals, dropdowns, popovers */
+  --color-bg-subtle: var(--color-navy-700);
+  /* Hover states on surfaces */
+  --color-bg-inset: var(--color-navy-850);
+  /* Input fields on cards (#0f1420) */
+  --color-bg-sidebar: var(--color-navy-850);
+  /* Left sidebar / nav pane */
+
+  /* Borders — navy tinted to match the design */
+  --color-border-default: rgba(255, 255, 255, 0.07);
+  /* Subtle white overlay on dark */
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  /* Very faint internal dividers */
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  /* Emphasized / focused borders */
+  --color-border-brand: var(--color-blue-600);
+  /* Brand-colored borders */
+
+  /* Text */
+  --color-text-primary: var(--color-navy-50);
+  /* Headings, primary content */
+  --color-text-secondary: var(--color-navy-300);
+  /* Body copy, descriptions */
+  --color-text-tertiary: var(--color-navy-400);
+  /* Metadata, timestamps, labels */
+  --color-text-disabled: var(--color-navy-500);
+  /* Disabled UI elements */
+  --color-text-inverse: var(--color-navy-900);
+  /* Text on light/brand backgrounds */
+  --color-text-brand: var(--color-blue-400);
+  /* Brand links, highlights */
+
+  /* Interactive — Brand (Blue) */
+  --color-brand-default: var(--color-blue-600);
+  /* Button fill, active nav */
+  --color-brand-hover: var(--color-blue-500);
+  /* Hover state */
+  --color-brand-active: var(--color-blue-700);
+  /* Pressed/active state */
+  --color-brand-muted: var(--color-blue-950);
+  /* Ghost / outlined button bg */
+  --color-brand-subtle: rgba(17, 82, 212, 0.12);
+  /* Tinted badge/chip background */
+
+  /* Status Semantic */
+  --color-critical: var(--color-red-500);
+  --color-critical-bg: rgba(239, 68, 68, 0.12);
+  --color-critical-border: var(--color-red-800);
+
+  --color-warning: var(--color-amber-500);
+  --color-warning-bg: rgba(245, 158, 11, 0.12);
+  --color-warning-border: var(--color-amber-800);
+
+  --color-success: var(--color-green-500);
+  --color-success-bg: rgba(34, 197, 94, 0.12);
+  --color-success-border: var(--color-green-800);
+
+  --color-ai: var(--color-purple-500);
+  --color-ai-bg: rgba(139, 92, 246, 0.12);
+  --color-ai-border: var(--color-purple-800);
+
+  /* ---------------------------------------------------------------------------
+     Spacing Scale
+     Follows an 8pt grid system — standard in professional design systems.
+  --------------------------------------------------------------------------- */
+  --spacing-px: 1px;
+  --spacing-0: 0px;
+  --spacing-0_5: 0.125rem;
+  /* 2px */
+  --spacing-1: 0.25rem;
+  /* 4px */
+  --spacing-1_5: 0.375rem;
+  /* 6px */
+  --spacing-2: 0.5rem;
+  /* 8px */
+  --spacing-2_5: 0.625rem;
+  /* 10px */
+  --spacing-3: 0.75rem;
+  /* 12px */
+  --spacing-4: 1rem;
+  /* 16px */
+  --spacing-5: 1.25rem;
+  /* 20px */
+  --spacing-6: 1.5rem;
+  /* 24px */
+  --spacing-8: 2rem;
+  /* 32px */
+  --spacing-10: 2.5rem;
+  /* 40px */
+  --spacing-12: 3rem;
+  /* 48px */
+  --spacing-16: 4rem;
+  /* 64px */
+  --spacing-20: 5rem;
+  /* 80px */
+  --spacing-24: 6rem;
+  /* 96px */
+
+  /* ---------------------------------------------------------------------------
+     Border Radius
+     Stitch design uses ROUND_EIGHT (8px) as the default radius.
+  --------------------------------------------------------------------------- */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  /* ← Stitch default — use for cards, inputs, buttons */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+  /* Pills, badges, avatars */
+
+  /* ---------------------------------------------------------------------------
+     Shadows — tuned for dark UI (lighter shadows are invisible on dark)
+     Use border + subtle glow rather than box-shadow on dark surfaces.
+  --------------------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-brand: 0 0 0 3px rgba(17, 82, 212, 0.35);
+  --shadow-critical: 0 0 0 3px rgba(239, 68, 68, 0.35);
+
+  /* ---------------------------------------------------------------------------
+     Transitions — consistent motion timing
+  --------------------------------------------------------------------------- */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Material standard */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 100ms;
+  --duration-normal: 150ms;
+  --duration-slow: 250ms;
+  --duration-slower: 350ms;
+
+  /* ---------------------------------------------------------------------------
+     Z-Index Scale — prevents stacking context chaos
+  --------------------------------------------------------------------------- */
+  --z-below: -1;
+  --z-base: 0;
+  --z-raised: 10;
+  /* Sticky headers, floating labels */
+  --z-dropdown: 20;
+  /* Dropdowns, selects */
+  --z-sticky: 30;
+  /* Sticky sidebars, table headers */
+  --z-overlay: 40;
+  /* Map overlays, drawers */
+  --z-modal: 50;
+  /* Modals */
+  --z-toast: 60;
+  /* Toast notifications */
+  --z-tooltip: 70;
+  /* Tooltips */
+
+  /* ---------------------------------------------------------------------------
+     Breakpoints / Screens
+  --------------------------------------------------------------------------- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* =============================================================================
+   BASE STYLES — Reset & sensible defaults for the dark UI canvas
+   ============================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  /* Prevent layout shift from scrollbar appearing */
+  overflow-y: scroll;
+  /* Smooth scrolling globally */
+  scroll-behavior: smooth;
+  /* Improve text rendering on dark BGs */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  min-height: 100dvh;
+}
+
+/* Focus ring — accessible and brand-consistent */
+:focus-visible {
+  outline: 2px solid var(--color-brand-default);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default focus ring in favor of :focus-visible */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Consistent selection highlight */
+::selection {
+  background-color: rgba(17, 82, 212, 0.35);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar styling — subtle dark theme scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-zinc-700);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-zinc-600);
+}
+
+/* Images & media — prevent overflow, maintain aspect ratio */
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Typography resets — headings inherit from design system, not browser defaults */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+}
+
+/* Prevent orphaned words in paragraphs */
+p {
+  text-wrap: pretty;
+}
+
+/* Heading balance */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Links */
+a {
+  color: var(--color-text-brand);
+  text-decoration: none;
+  transition: color var(--duration-normal) var(--ease-default);
+}
+
+a:hover {
+  color: var(--color-blue-300);
+}
+
+/* Code and monospace */
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  letter-spacing: var(--tracking-normal);
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border-default);
+  margin: var(--spacing-6) 0;
 }
