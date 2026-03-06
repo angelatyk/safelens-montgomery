@@ -7,19 +7,22 @@ export default function TopBar() {
 
                 {/* ── Brand ─────────────────────────────────────────── */}
                 <div className="flex shrink-0 items-center gap-2.5">
-                    {/* Shield icon mark */}
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-default)]">
+                    {/* Shield logo mark */}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-default)] shadow-lg shadow-[var(--color-brand-default)]/20">
                         <svg
-                            xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
-                            fill="currentColor"
-                            className="h-4.5 w-4.5 text-white"
-                            aria-hidden="true"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5.5 w-5.5 text-white"
                         >
                             <path
-                                fillRule="evenodd"
-                                d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
-                                clipRule="evenodd"
+                                d="M12 2L4 5V11C4 16.19 7.41 21.05 12 22C16.59 21.05 20 16.19 20 11V5L12 2Z"
+                                fill="currentColor"
+                            />
+                            <path
+                                d="M12 22C16.59 21.05 20 16.19 20 11V5L12 2L12 22Z"
+                                fill="white"
+                                fillOpacity="0.2"
                             />
                         </svg>
                     </div>
@@ -69,7 +72,7 @@ export default function TopBar() {
                         type="button"
                         aria-label="View notifications"
                         className="
-              relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]
+              relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)]
               text-[var(--color-text-secondary)]
               transition-colors duration-[var(--duration-normal)]
               hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]
@@ -92,7 +95,7 @@ export default function TopBar() {
                         type="button"
                         aria-label="Open user menu"
                         className="
-              flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]
+              flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)]
               text-[var(--color-text-secondary)]
               transition-colors duration-[var(--duration-normal)]
               hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]
