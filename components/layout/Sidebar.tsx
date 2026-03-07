@@ -9,10 +9,12 @@ import {
     ExclamationCircleIcon,
     ClipboardDocumentCheckIcon,
     UserCircleIcon,
-    ChevronUpDownIcon
+    ChevronUpDownIcon,
+    ArrowLeftOnRectangleIcon
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 interface NavItem {
     name: string;
@@ -24,6 +26,7 @@ interface NavItem {
 interface SidebarProps {
     role?: "resident" | "official";
     isOpen?: boolean;
+    isLoggedIn?: boolean;
     onClose?: () => void;
 }
 
@@ -39,9 +42,17 @@ const OFFICIAL_NAV: NavItem[] = [
     { name: "Archive", href: "#", icon: ClipboardDocumentCheckIcon },
 ];
 
-export default function Sidebar({ role = "resident", isOpen = false, onClose }: SidebarProps) {
+export default function Sidebar({ role = "resident", isOpen = false, isLoggedIn = false, onClose }: SidebarProps) {
     const pathname = usePathname();
+    const router = useRouter();
+    const supabase = createClient();
     const navItems = role === "official" ? OFFICIAL_NAV : RESIDENT_NAV;
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        router.push("/");
+        router.refresh();
+    };
 
     return (
         <>
@@ -170,6 +181,16 @@ export default function Sidebar({ role = "resident", isOpen = false, onClose }: 
                                     BROADCAST-ALPHA-01
                                 </p>
                             </div>
+
+                            {isLoggedIn && (
+                                <button
+                                    onClick={handleSignOut}
+                                    className="mt-2 group flex w-full items-center gap-3 rounded-[var(--radius-md)] p-2 transition-colors hover:bg-red-500/10 cursor-pointer text-left text-red-500 hover:text-red-400"
+                                >
+                                    <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                                    <span className="text-sm font-medium">Log Out</span>
+                                </button>
+                            )}
                         </div>
 
                     </div>

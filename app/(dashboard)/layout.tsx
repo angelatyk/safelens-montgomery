@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
     children,
@@ -11,7 +12,21 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [user, setUser] = useState<any>(null);
     const pathname = usePathname();
+    const supabase = createClient();
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            setUser(data.user);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [supabase]);
 
     // Determine role based on path
     const role = pathname?.startsWith("/official") ? "official" : "resident";
@@ -19,12 +34,13 @@ export default function DashboardLayout({
     return (
         <div className="min-h-screen bg-[var(--color-bg-canvas)]">
             {/* Universal TopBar */}
-            <TopBar onMenuClick={() => setIsSidebarOpen(true)} showSignIn={role === "resident"} />
+            <TopBar onMenuClick={() => setIsSidebarOpen(true)} showSignIn={role === "resident" && !user} />
 
             {/* Sidebar System */}
             <Sidebar
                 role={role}
                 isOpen={isSidebarOpen}
+                isLoggedIn={!!user}
                 onClose={() => setIsSidebarOpen(false)}
             />
 
