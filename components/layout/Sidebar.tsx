@@ -10,9 +10,11 @@ import {
     ClipboardDocumentCheckIcon,
     UserCircleIcon,
     ChevronUpDownIcon,
-    ArrowLeftOnRectangleIcon
+    ArrowLeftOnRectangleIcon,
+    ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,6 +29,8 @@ interface SidebarProps {
     role?: "resident" | "official";
     isOpen?: boolean;
     isLoggedIn?: boolean;
+    displayName?: string | null;
+    avatarUrl?: string | null;
     onClose?: () => void;
 }
 
@@ -42,7 +46,14 @@ const OFFICIAL_NAV: NavItem[] = [
     { name: "Archive", href: "#", icon: ClipboardDocumentCheckIcon },
 ];
 
-export default function Sidebar({ role = "resident", isOpen = false, isLoggedIn = false, onClose }: SidebarProps) {
+export default function Sidebar({
+    role = "resident",
+    isOpen = false,
+    isLoggedIn = false,
+    displayName,
+    avatarUrl,
+    onClose,
+}: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
@@ -157,39 +168,78 @@ export default function Sidebar({ role = "resident", isOpen = false, isLoggedIn 
                         )}
 
                         {/* Footer / User Profile */}
-                        <div className="mt-auto border-t border-[var(--color-border-subtle)] pt-4">
-                            <button className="group flex w-full items-center gap-3 rounded-[var(--radius-md)] p-2 transition-colors hover:bg-[var(--color-bg-subtle)] cursor-pointer text-left">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elevated)] text-[var(--color-text-tertiary)] border border-[var(--color-border-default)]">
-                                    <UserCircleIcon className="h-6 w-6" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="truncate text-xs font-bold text-[var(--color-text-primary)]">
-                                        {role === "official" ? "Officer Miller" : "Alex Resident"}
-                                    </p>
-                                    <p className="truncate text-[10px] text-[var(--color-text-tertiary)] capitalize">
-                                        {role} Account
-                                    </p>
-                                </div>
-                                <ChevronUpDownIcon className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100" />
-                            </button>
+                        <div className="mt-auto border-t border-[var(--color-border-subtle)] pt-4 space-y-2">
 
-                            <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-bg-canvas)] p-3 border border-[var(--color-border-subtle)]">
-                                <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-tighter">
-                                    Connected Channel
-                                </p>
-                                <p className="text-xs font-bold text-[var(--color-text-secondary)]">
-                                    BROADCAST-ALPHA-01
-                                </p>
-                            </div>
+                            {isLoggedIn ? (
+                                <>
+                                    {/* Logged in: show real user info */}
+                                    <button className="group flex w-full items-center gap-3 rounded-[var(--radius-md)] p-2 transition-colors hover:bg-[var(--color-bg-subtle)] cursor-pointer text-left">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] overflow-hidden">
+                                            {avatarUrl ? (
+                                                <Image
+                                                    src={avatarUrl}
+                                                    alt={displayName ?? "User avatar"}
+                                                    width={36}
+                                                    height={36}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <UserCircleIcon className="h-6 w-6 text-[var(--color-text-tertiary)]" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="truncate text-xs font-bold text-[var(--color-text-primary)]">
+                                                {displayName ?? "Unknown User"}
+                                            </p>
+                                            <p className="truncate text-[10px] text-[var(--color-text-tertiary)] capitalize">
+                                                {role} Account
+                                            </p>
+                                        </div>
+                                        <ChevronUpDownIcon className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100" />
+                                    </button>
 
-                            {isLoggedIn && (
-                                <button
-                                    onClick={handleSignOut}
-                                    className="mt-2 group flex w-full items-center gap-3 rounded-[var(--radius-md)] p-2 transition-colors hover:bg-red-500/10 cursor-pointer text-left text-red-500 hover:text-red-400"
-                                >
-                                    <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                                    <span className="text-sm font-medium">Log Out</span>
-                                </button>
+                                    <div className="rounded-[var(--radius-sm)] bg-[var(--color-bg-canvas)] p-3 border border-[var(--color-border-subtle)]">
+                                        <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-tighter">
+                                            Connected Channel
+                                        </p>
+                                        <p className="text-xs font-bold text-[var(--color-text-secondary)]">
+                                            BROADCAST-ALPHA-01
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/10 py-2.5 text-xs font-black uppercase tracking-widest text-red-500 transition-all hover:bg-red-500/20 cursor-pointer"
+                                    >
+                                        <ArrowLeftOnRectangleIcon className="h-4 w-4" />
+                                        Log Out
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Guest state */}
+                                    <div className="flex items-center gap-3 rounded-[var(--radius-md)] p-2">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elevated)] border border-dashed border-[var(--color-border-default)]">
+                                            <UserCircleIcon className="h-6 w-6 text-[var(--color-text-disabled)]" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-[var(--color-text-tertiary)]">
+                                                Browsing as Guest
+                                            </p>
+                                            <p className="text-[10px] text-[var(--color-text-disabled)]">
+                                                No account required
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Link
+                                        href="/login"
+                                        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-[var(--color-brand-default)]/30 bg-[var(--color-brand-default)]/10 py-2.5 text-xs font-black uppercase tracking-widest text-[var(--color-brand-default)] transition-all hover:bg-[var(--color-brand-default)]/20 cursor-pointer"
+                                    >
+                                        <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                                        Sign In
+                                    </Link>
+                                </>
                             )}
                         </div>
 
