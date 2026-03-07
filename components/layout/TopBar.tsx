@@ -118,7 +118,7 @@ export default function TopBar({ onMenuClick, variant = "default", hideSidebar =
                             {showSignIn && (
                                 <a
                                     href="/login"
-                                    className="flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-brand-default)] px-4 py-1.5 text-xs font-bold text-white transition-all hover:bg-[var(--color-brand-hover)] shadow-lg shadow-[var(--color-brand-default)]/20"
+                                    className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-blue-500 px-4 py-1.5 text-xs font-bold !text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400 hover:scale-105"
                                 >
                                     Sign In
                                 </a>
