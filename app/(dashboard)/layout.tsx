@@ -19,7 +19,7 @@ export default function DashboardLayout({
     return (
         <div className="min-h-screen bg-[var(--color-bg-canvas)]">
             {/* Universal TopBar */}
-            <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
+            <TopBar onMenuClick={() => setIsSidebarOpen(true)} showSignIn={role === "resident"} />
 
             {/* Sidebar System */}
             <Sidebar
