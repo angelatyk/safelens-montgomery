@@ -4,10 +4,9 @@ interface TopBarProps {
     onMenuClick?: () => void;
     variant?: "default" | "minimal";
     hideSidebar?: boolean;
-    showSignIn?: boolean;
 }
 
-export default function TopBar({ onMenuClick, variant = "default", hideSidebar = false, showSignIn = false }: TopBarProps) {
+export default function TopBar({ onMenuClick, variant = "default", hideSidebar = false }: TopBarProps) {
     const isMinimal = variant === "minimal";
 
     return (
@@ -113,16 +112,6 @@ export default function TopBar({ onMenuClick, variant = "default", hideSidebar =
                                     className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--color-critical)] ring-2 ring-[var(--color-bg-surface)]"
                                 />
                             </button>
-
-                            {/* Sign In button for guest mode */}
-                            {showSignIn && (
-                                <a
-                                    href="/login"
-                                    className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-blue-500 px-4 py-1.5 text-xs font-bold !text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400 hover:scale-105"
-                                >
-                                    Sign In
-                                </a>
-                            )}
                         </>
                     )}
                 </div>
