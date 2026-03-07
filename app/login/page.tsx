@@ -124,16 +124,10 @@ export default function LoginPage() {
                                 loading={loading === 'google'}
                             />
                             <AuthButton
-                                provider="linkedin"
+                                provider="github"
                                 iconOnly
-                                onClick={() => handleAuth('linkedin')}
-                                loading={loading === 'linkedin'}
-                            />
-                            <AuthButton
-                                provider="facebook"
-                                iconOnly
-                                onClick={() => handleAuth('facebook')}
-                                loading={loading === 'facebook'}
+                                onClick={() => handleAuth('github')}
+                                loading={loading === 'github'}
                             />
                         </div>
                     </div>
