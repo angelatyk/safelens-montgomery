@@ -305,15 +305,11 @@
   --z-dropdown: 20;
   /* Dropdowns, selects */
   --z-sticky: 30;
-  /* Sticky sidebars, table headers */
-  --z-overlay: 40;
-  /* Map overlays, drawers */
-  --z-modal: 50;
-  /* Modals */
-  --z-toast: 60;
-  /* Toast notifications */
-  --z-tooltip: 70;
-  /* Tooltips */
+  --z-overlay: 90;
+  --z-drawer: 100;
+  --z-modal: 110;
+  --z-toast: 120;
+  --z-tooltip: 130;
 
   /* ---------------------------------------------------------------------------
      Breakpoints / Screens

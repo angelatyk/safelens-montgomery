@@ -1,14 +1,28 @@
-import { BellIcon, MagnifyingGlassIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { BellIcon, MagnifyingGlassIcon, Bars3Icon } from "@heroicons/react/24/outline";
 
-export default function TopBar() {
+interface TopBarProps {
+    onMenuClick?: () => void;
+}
+
+export default function TopBar({ onMenuClick }: TopBarProps) {
     return (
-        <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] h-16 border-b border-[var(--color-border-default)] bg-[var(--color-bg-surface)]/80 backdrop-blur-md">
+        <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] h-16 border-b border-[var(--color-border-default)] bg-[var(--color-bg-surface)]/80 backdrop-blur-md lg:pl-64">
             <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
-                {/* ── Brand ─────────────────────────────────────────── */}
-                <div className="flex shrink-0 items-center gap-2.5">
-                    {/* Shield logo mark */}
-                    <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-default)] shadow-lg shadow-[var(--color-brand-default)]/20">
+                {/* ── Brand & Menu ──────────────────────────────────── */}
+                <div className="flex shrink-0 items-center gap-4">
+                    {/* Mobile Menu Toggle */}
+                    <button
+                        type="button"
+                        onClick={onMenuClick}
+                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] lg:hidden"
+                        aria-label="Open menu"
+                    >
+                        <Bars3Icon className="h-6 w-6" />
+                    </button>
+
+                    {/* Shield logo mark (Visible only on mobile or when sidebar is hidden) */}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[#1152d4] shadow-lg shadow-[#1152d4]/40 lg:hidden">
                         <svg
                             viewBox="0 0 24 24"
                             fill="none"
@@ -27,8 +41,8 @@ export default function TopBar() {
                         </svg>
                     </div>
 
-                    {/* Wordmark */}
-                    <div className="leading-none">
+                    {/* Wordmark (Visible only on mobile) */}
+                    <div className="leading-none lg:hidden">
                         <span className="text-sm font-semibold tracking-tight text-[var(--color-text-primary)]">
                             SafeLens
                         </span>
@@ -85,24 +99,6 @@ export default function TopBar() {
                             aria-label="3 unread notifications"
                             className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--color-critical)] ring-2 ring-[var(--color-bg-surface)]"
                         />
-                    </button>
-
-                    {/* Divider */}
-                    <div className="mx-1 h-5 w-px bg-[var(--color-border-default)]" aria-hidden="true" />
-
-                    {/* Profile */}
-                    <button
-                        type="button"
-                        aria-label="Open user menu"
-                        className="
-              flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)]
-              text-[var(--color-text-secondary)]
-              transition-colors duration-[var(--duration-normal)]
-              hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]
-              focus-visible:outline-2 focus-visible:outline-[var(--color-brand-default)]
-            "
-                    >
-                        <UserCircleIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
                 </div>
             </div>
