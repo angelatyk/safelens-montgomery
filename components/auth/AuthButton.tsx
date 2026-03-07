@@ -65,7 +65,7 @@ export default function AuthButton({ provider, onClick, loading, iconOnly }: Aut
                 disabled={loading}
                 title={`Continue with ${config.name}`}
                 className={`
-          flex h-11 w-11 items-center justify-center rounded-full transition-all 
+          flex h-11 w-11 items-center justify-center rounded-full transition-all cursor-pointer
           hover:opacity-90 active:scale-[0.98] disabled:opacity-50
           ${config.bg} ${config.text}
         `}

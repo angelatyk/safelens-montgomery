@@ -42,10 +42,14 @@ export default function DemoPage() {
     const router = useRouter();
     const supabase = createClient();
 
+    const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
     const [loading, setLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [name, setName] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
     const handleDemoLogin = async (type: "resident" | "official") => {
@@ -70,6 +74,7 @@ export default function DemoPage() {
 
     const handleOAuth = async (provider: "google" | "github") => {
         setError(null);
+        setSuccess(null);
         setLoading(provider);
 
         const { error } = await supabase.auth.signInWithOAuth({
@@ -88,6 +93,7 @@ export default function DemoPage() {
     const handleEmailSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setSuccess(null);
         setLoading("email");
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -108,6 +114,73 @@ export default function DemoPage() {
             const role = data?.role ?? "resident";
             router.push(role === "official" || role === "dispatcher" ? "/official" : "/");
         }
+    };
+
+    const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setSuccess(null);
+        setLoading("email");
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(null);
+            return;
+        }
+
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: name,
+                },
+            },
+        });
+
+        if (error) {
+            setError(error.message);
+            setLoading(null);
+            return;
+        }
+
+        // Sign out just in case Supabase auto-logged the user in upon signup
+        await supabase.auth.signOut();
+
+        setSuccess("Account created successfully. You can now sign in.");
+        setMode("signin");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setName("");
+        setLoading(null);
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setSuccess(null);
+        setLoading("reset");
+
+        if (!email) {
+            setError("Please enter your email address first.");
+            setLoading(null);
+            return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+        });
+
+        if (error) {
+            setError(error.message);
+        } else {
+            setSuccess("Password reset email sent! Check your inbox.");
+            setMode("signin");
+            setEmail("");
+            setPassword("");
+        }
+        setLoading(null);
     };
 
     return (
@@ -135,6 +208,13 @@ export default function DemoPage() {
                     {error && (
                         <div className="rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 text-center">
                             {error}
+                        </div>
+                    )}
+
+                    {/* Success message */}
+                    {success && (
+                        <div className="rounded-[var(--radius-sm)] border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400 text-center">
+                            {success}
                         </div>
                     )}
 
@@ -209,57 +289,147 @@ export default function DemoPage() {
                         </div>
                         <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
                             <span className="bg-[var(--color-bg-canvas)] px-4 text-[var(--color-text-tertiary)]">
-                                Or sign in with your account
+                                {mode === "signin" ? "Or sign in with your account" : mode === "signup" ? "Create a new account" : "Reset Password"}
                             </span>
                         </div>
                     </div>
 
                     {/* Regular login form */}
                     <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-6 space-y-5">
-                        <form className="space-y-4" onSubmit={handleEmailSignIn}>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                    <EnvelopeIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                        <form className="space-y-4" onSubmit={mode === "signin" ? handleEmailSignIn : mode === "signup" ? handleSignUp : handleForgotPassword}>
+                            {mode === "signup" && (
+                                <div className="space-y-2">
+                                    <label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] px-1">
+                                        Full Name
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                                            <UserIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                                        </div>
+                                        <input
+                                            id="name"
+                                            type="text"
+                                            placeholder="Jane Doe"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-4 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all cursor-text"
+                                            required={mode === "signup"}
+                                        />
+                                    </div>
                                 </div>
-                                <input
-                                    type="email"
-                                    placeholder="Email address"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-4 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all"
-                                    required
-                                />
+                            )}
+
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] px-1">
+                                    Email Address
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                                        <EnvelopeIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                                    </div>
+                                    <input
+                                        type="email"
+                                        placeholder="Email address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-4 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus://var(--color-brand-default)]/20 transition-all cursor-text"
+                                        required
+                                    />
+                                </div>
                             </div>
 
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                    <LockClosedIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                            {mode !== "forgot" && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between px-1">
+                                        <label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                                            Password
+                                        </label>
+                                        {mode === "signin" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMode("forgot"); setError(null); setSuccess(null); setPassword(""); }}
+                                                className="text-[10px] font-bold text-[var(--color-text-brand)] hover:text-blue-300 transition-colors uppercase tracking-widest cursor-pointer"
+                                            >
+                                                Forgot?
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                                            <LockClosedIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                                        </div>
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-11 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all font-mono cursor-text"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[var(--color-text-tertiary)] hover:text-white transition-colors cursor-pointer"
+                                        >
+                                            {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                 </div>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-11 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all font-mono"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[var(--color-text-tertiary)] hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                                </button>
-                            </div>
+                            )}
+
+                            {mode === "signup" && (
+                                <div className="space-y-2">
+                                    <label htmlFor="confirmPassword" className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] px-1">
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                                            <LockClosedIcon className="h-4 w-4 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-brand-default)] transition-colors" />
+                                        </div>
+                                        <input
+                                            id="confirmPassword"
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] pl-11 pr-11 py-3 text-sm text-white placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all font-mono cursor-text"
+                                            required={mode === "signup"}
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <button
                                 type="submit"
                                 disabled={!!loading}
-                                className="w-full rounded-[var(--radius-sm)] bg-[var(--color-brand-default)] py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-[var(--color-brand-hover)] active:scale-[0.99] transition-all disabled:opacity-50"
+                                className="w-full rounded-[var(--radius-sm)] bg-[var(--color-brand-default)] py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-[var(--color-brand-hover)] active:scale-[0.99] transition-all disabled:opacity-50 mt-2 cursor-pointer"
                             >
-                                {loading === "email" ? "Signing In..." : "Sign In"}
+                                {loading === "email" ? (mode === "signin" ? "Signing In..." : "Creating Account...") : loading === "reset" ? "Sending..." : (mode === "signin" ? "Sign In" : mode === "signup" ? "Sign Up" : "Send Password Recovery")}
                             </button>
                         </form>
+
+                        {/* Sign Up / Sign In Toggle */}
+                        <div className="text-center mt-6">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode(mode === "signin" ? "signup" : "signin");
+                                    setError(null);
+                                    setSuccess(null);
+                                    setPassword("");
+                                    setConfirmPassword("");
+                                }}
+                                className="group text-xs font-bold text-[var(--color-text-secondary)] hover:text-white transition-colors cursor-pointer"
+                            >
+                                {mode === "signin" ? (
+                                    <>Don't have an account? <span className="text-white group-hover:text-[var(--color-text-brand)] transition-colors">Sign Up</span></>
+                                ) : mode === "signup" ? (
+                                    <>Already have an account? <span className="text-white group-hover:text-[var(--color-text-brand)] transition-colors">Sign In</span></>
+                                ) : (
+                                    <span className="text-white group-hover:text-[var(--color-text-brand)] transition-colors">Back to Sign In</span>
+                                )}
+                            </button>
+                        </div>
 
                         {/* Divider */}
                         <div className="relative py-3">
