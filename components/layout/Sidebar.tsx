@@ -195,17 +195,7 @@ export default function Sidebar({
                                                 {role} Account
                                             </p>
                                         </div>
-                                        <ChevronUpDownIcon className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100" />
                                     </button>
-
-                                    <div className="rounded-[var(--radius-sm)] bg-[var(--color-bg-canvas)] p-3 border border-[var(--color-border-subtle)]">
-                                        <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-tighter">
-                                            Connected Channel
-                                        </p>
-                                        <p className="text-xs font-bold text-[var(--color-text-secondary)]">
-                                            BROADCAST-ALPHA-01
-                                        </p>
-                                    </div>
 
                                     <button
                                         onClick={handleSignOut}
