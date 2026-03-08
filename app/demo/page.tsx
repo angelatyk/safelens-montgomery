@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import AuthButton from "@/components/auth/AuthButton";
 import {
     UserIcon,
@@ -40,7 +40,7 @@ const DEMO_ACCOUNTS = {
 
 export default function DemoPage() {
     const router = useRouter();
-    const supabase = createClient();
+
 
     const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
     const [loading, setLoading] = useState<string | null>(null);

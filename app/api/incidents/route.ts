@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -13,7 +8,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") ?? "10");
     const offset = parseInt(searchParams.get("offset") ?? "0");
 
-    let query = supabase
+    let query = supabaseAdmin
         .from("incidents")
         .select("id, type, neighborhood_id, lat, lng, occurred_at, source, raw_data, narratives(content)")
         .order("occurred_at", { ascending: false })

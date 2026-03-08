@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import AuthButton from "@/components/auth/AuthButton";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import {
     EnvelopeIcon,
     LockClosedIcon,
@@ -16,7 +16,7 @@ import {
 
 export default function LoginPage() {
     const router = useRouter();
-    const supabase = createClient();
+
 
     const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
     const [loading, setLoading] = useState<string | null>(null);

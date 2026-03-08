@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ReportIncidentModal from "@/components/dashboard/ReportIncidentModal";
 
@@ -13,7 +13,7 @@ export default function ReportButton() {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
-        const supabase = createClient();
+
 
         const fetchUserAndRole = async (authUser: User | null) => {
             setUser(authUser);

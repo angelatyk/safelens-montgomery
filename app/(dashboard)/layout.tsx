@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
     children,
@@ -16,7 +16,7 @@ export default function DashboardLayout({
     const [displayName, setDisplayName] = useState<string | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const pathname = usePathname();
-    const supabase = createClient();
+
 
     useEffect(() => {
         const fetchProfile = async (userId: string) => {
@@ -49,7 +49,7 @@ export default function DashboardLayout({
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase]);
+    }, []);
 
     // Determine role based on path
     const role = pathname?.startsWith("/official") ? "official" : "resident";

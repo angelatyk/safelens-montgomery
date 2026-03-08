@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import IncidentCard from "./IncidentCard";
 
 const PAGE_SIZE = 10;
@@ -65,7 +65,7 @@ export default function IncidentFeed() {
         setIsLoading(true);
         fetchIncidents(0, false).finally(() => setIsLoading(false));
 
-        const supabase = createClient();
+
         supabase.auth.getUser().then(({ data }) => setUser(data.user));
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

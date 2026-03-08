@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 interface NavItem {
     name: string;
@@ -56,7 +56,7 @@ export default function Sidebar({
 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const supabase = createClient();
+
     const navItems = role === "official" ? OFFICIAL_NAV : RESIDENT_NAV;
 
     const handleSignOut = async () => {
