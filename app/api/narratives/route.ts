@@ -21,7 +21,11 @@ export async function GET(request: Request) {
             neighborhood_id,
             resident_report_id,
             official_notes,
-            title
+            title,
+            official_status,
+            official_update,
+            incident_count,
+            news_count
         `)
         .order("generated_at", { ascending: false })
         .range(offset, offset + limit - 1);

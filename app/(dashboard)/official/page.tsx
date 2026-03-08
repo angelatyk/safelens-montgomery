@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import {
+    CheckCircleIcon,
+    NoSymbolIcon,
+    FlagIcon,
+    ArchiveBoxIcon
+} from "@heroicons/react/24/outline";
 import OfficialNarrativeQueue from "@/components/official/OfficialNarrativeQueue";
+import NarrativeDetailPanel from "@/components/official/NarrativeDetailPanel";
 
 type Tab = "narratives";
 
@@ -31,26 +38,9 @@ export default function OfficialOpsPage() {
                 </div>
             </div>
 
-            {/* Right Column: Detail Panel (placeholder until Phase 3) */}
+            {/* Right Column: AI Detail & Response Panel */}
             <div className="flex flex-1 flex-col bg-[var(--color-bg-surface)]/80 backdrop-blur-sm">
-                {!selectedNarrativeId ? (
-                    <div className="flex h-full items-center justify-center p-8 text-center">
-                        <div className="space-y-3 opacity-40">
-                            <div className="mx-auto h-10 w-10 rounded-full border-2 border-[var(--color-text-tertiary)] flex items-center justify-center">
-                                <span className="text-lg">✦</span>
-                            </div>
-                            <p className="text-sm text-[var(--color-text-tertiary)]">
-                                Select a narrative from the queue to begin review.
-                            </p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex h-full items-center justify-center p-8 text-center">
-                        <p className="text-sm text-[var(--color-text-tertiary)]">
-                            Detail panel coming in Phase 3 — narrative <span className="font-mono text-[var(--color-brand-default)]">{selectedNarrativeId.slice(0, 8)}…</span> selected.
-                        </p>
-                    </div>
-                )}
+                <NarrativeDetailPanel narrativeId={selectedNarrativeId} />
             </div>
 
         </div>
