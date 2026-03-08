@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import { supabase } from "@/lib/supabase/client";
+import { redirectAfterLogin } from "@/lib/auth-client";
 import AuthButton from "@/components/auth/AuthButton";
 import {
     UserIcon,
@@ -69,7 +70,7 @@ export default function DemoPage() {
             return;
         }
 
-        router.push(account.redirectTo);
+        await redirectAfterLogin(router);
     };
 
     const handleOAuth = async (provider: "google" | "github") => {
@@ -104,16 +105,7 @@ export default function DemoPage() {
             return;
         }
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data } = await supabase
-                .from("users")
-                .select("role")
-                .eq("id", user.id)
-                .single();
-            const role = data?.role ?? "resident";
-            router.push(role === "official" || role === "dispatcher" ? "/official" : "/");
-        }
+        await redirectAfterLogin(router);
     };
 
     const handleSignUp = async (e: React.FormEvent) => {

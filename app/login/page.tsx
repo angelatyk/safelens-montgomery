@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import AuthButton from "@/components/auth/AuthButton";
 import { supabase } from "@/lib/supabase/client";
+import { redirectAfterLogin } from "@/lib/auth-client";
 import {
     EnvelopeIcon,
     LockClosedIcon,
@@ -46,17 +47,7 @@ export default function LoginPage() {
             return;
         }
 
-        // Get role and redirect
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data } = await supabase
-                .from("users")
-                .select("role")
-                .eq("id", user.id)
-                .single();
-            const role = data?.role ?? "resident";
-            router.push(role === "official" || role === "dispatcher" ? "/official" : "/");
-        }
+        await redirectAfterLogin(router);
     };
 
     // Email sign up

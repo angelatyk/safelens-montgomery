@@ -1,46 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User } from "@supabase/supabase-js";
+import { useUser } from "@/lib/hooks/useUser";
 import { supabase } from "@/lib/supabase/client";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ReportIncidentModal from "@/components/dashboard/ReportIncidentModal";
 
 export default function ReportButton() {
-    const [user, setUser] = useState<User | null>(null);
+    const { user, isLoading } = useUser();
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
+    // Fetch the user's role whenever their auth state changes
     useEffect(() => {
+        if (!user) {
+            setUserRole(null);
+            return;
+        }
 
-
-        const fetchUserAndRole = async (authUser: User | null) => {
-            setUser(authUser);
-            if (authUser) {
-                const { data, error } = await supabase
-                    .from("users")
-                    .select("role")
-                    .eq("id", authUser.id)
-                    .single();
-
-                if (!error && data) {
-                    setUserRole(data.role);
-                }
-            } else {
-                setUserRole(null);
-            }
-            setIsLoading(false);
-        };
-
-        supabase.auth.getUser().then(({ data }) => fetchUserAndRole(data.user));
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => { fetchUserAndRole(session?.user ?? null); }
-        );
-
-        return () => subscription.unsubscribe();
-    }, []);
+        supabase
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (!error && data) setUserRole(data.role);
+            });
+    }, [user]);
 
     if (isLoading || !user || userRole !== "resident") return null;
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/client";
+import { useUser } from "@/lib/hooks/useUser";
 import IncidentCard from "./IncidentCard";
 
 const PAGE_SIZE = 10;
@@ -42,8 +41,6 @@ export default function IncidentFeed() {
     const [error, setError] = useState<string | null>(null);
     const [offset, setOffset] = useState(0);
 
-    const [user, setUser] = useState<User | null>(null);
-
     const fetchIncidents = async (currentOffset: number, append: boolean) => {
         try {
             const res = await fetch(
@@ -64,26 +61,18 @@ export default function IncidentFeed() {
     useEffect(() => {
         setIsLoading(true);
         fetchIncidents(0, false).finally(() => setIsLoading(false));
+    }, []);
 
-
-        supabase.auth.getUser().then(({ data }) => setUser(data.user));
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        // Event listener for when modal in TopBar submits successfully
+    useEffect(() => {
+        // Refresh the feed when a new incident is reported via the TopBar modal
         const handleIncidentReported = () => {
             setOffset(0);
             fetchIncidents(0, false);
         };
         window.addEventListener('incidentReported', handleIncidentReported);
-
-        return () => {
-            subscription.unsubscribe();
-            window.removeEventListener('incidentReported', handleIncidentReported);
-        };
+        return () => window.removeEventListener('incidentReported', handleIncidentReported);
     }, []);
+
 
     const handleLoadMore = async () => {
         const nextOffset = offset + PAGE_SIZE;

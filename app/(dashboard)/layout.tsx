@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
+import { useUser } from "@/lib/hooks/useUser";
 import { supabase } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
@@ -12,44 +13,31 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [user, setUser] = useState<any>(null);
     const [displayName, setDisplayName] = useState<string | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const pathname = usePathname();
+    const { user } = useUser();
 
-
+    // Fetch the user's display name and avatar whenever their auth state changes
     useEffect(() => {
-        const fetchProfile = async (userId: string) => {
-            const { data } = await supabase
-                .from("users")
-                .select("display_name, avatar_url")
-                .eq("id", userId)
-                .single();
-            if (data) {
-                setDisplayName(data.display_name);
-                setAvatarUrl(data.avatar_url);
-            }
-        };
+        if (!user) {
+            setDisplayName(null);
+            setAvatarUrl(null);
+            return;
+        }
 
-        supabase.auth.getUser().then(({ data }) => {
-            setUser(data.user);
-            if (data.user) {
-                fetchProfile(data.user.id);
-            }
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
-                setDisplayName(null);
-                setAvatarUrl(null);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
+        supabase
+            .from("users")
+            .select("display_name, avatar_url")
+            .eq("id", user.id)
+            .single()
+            .then(({ data }) => {
+                if (data) {
+                    setDisplayName(data.display_name);
+                    setAvatarUrl(data.avatar_url);
+                }
+            });
+    }, [user]);
 
     // Determine role based on path
     const role = pathname?.startsWith("/official") ? "official" : "resident";
