@@ -1,4 +1,5 @@
 import { BellIcon, MagnifyingGlassIcon, Bars3Icon } from "@heroicons/react/24/outline";
+import ReportIncidentButton from "./ReportIncidentButton";
 
 interface TopBarProps {
     onMenuClick?: () => void;
@@ -94,6 +95,9 @@ export default function TopBar({ onMenuClick, variant = "default", hideSidebar =
                     {/* Only show actions if NOT minimal */}
                     {!isMinimal && (
                         <>
+                            {/* Report Incident Button */}
+                            <ReportIncidentButton />
+
                             {/* Notification bell */}
                             <button
                                 type="button"

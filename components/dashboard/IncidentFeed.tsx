@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import IncidentCard from "./IncidentCard";
 
 const PAGE_SIZE = 10;
@@ -40,6 +42,8 @@ export default function IncidentFeed() {
     const [error, setError] = useState<string | null>(null);
     const [offset, setOffset] = useState(0);
 
+    const [user, setUser] = useState<User | null>(null);
+
     const fetchIncidents = async (currentOffset: number, append: boolean) => {
         try {
             const res = await fetch(
@@ -60,6 +64,25 @@ export default function IncidentFeed() {
     useEffect(() => {
         setIsLoading(true);
         fetchIncidents(0, false).finally(() => setIsLoading(false));
+
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        // Event listener for when modal in TopBar submits successfully
+        const handleIncidentReported = () => {
+            setOffset(0);
+            fetchIncidents(0, false);
+        };
+        window.addEventListener('incidentReported', handleIncidentReported);
+
+        return () => {
+            subscription.unsubscribe();
+            window.removeEventListener('incidentReported', handleIncidentReported);
+        };
     }, []);
 
     const handleLoadMore = async () => {
@@ -76,7 +99,7 @@ export default function IncidentFeed() {
                 <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
                     Safety Intelligence Feed
                 </h2>
-                <span className="text-xs text-[var(--color-text-tertiary)]">
+                <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:inline-block">
                     Updating in real-time
                 </span>
             </div>
