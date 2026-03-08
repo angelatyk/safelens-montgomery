@@ -43,6 +43,8 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 interface NominatimResult {
     place_id: number;
     display_name: string;
+    lat: string;
+    lon: string;
 }
 
 export default function ReportIncidentModal({
@@ -57,6 +59,9 @@ export default function ReportIncidentModal({
     const [addressSuggestions, setAddressSuggestions] = useState<NominatimResult[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [description, setDescription] = useState("");
+    const [lat, setLat] = useState<number | null>(null);
+    const [lng, setLng] = useState<number | null>(null);
+    const [isAnonymous, setIsAnonymous] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
@@ -118,12 +123,20 @@ export default function ReportIncidentModal({
         const parts = result.display_name.split(",").slice(0, 3).join(",").trim();
         setLocationInput(parts);
         setLocation(parts);
+        setLat(parseFloat(result.lat));
+        setLng(parseFloat(result.lon));
         setAddressSuggestions([]);
         setShowSuggestions(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!lat || !lng) {
+            setError("Please select a location from the suggestions.");
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
@@ -137,6 +150,9 @@ export default function ReportIncidentModal({
                     category: finalCategory,
                     location,
                     description,
+                    lat,
+                    lng,
+                    is_anonymous: isAnonymous,
                 }),
             });
 
@@ -153,6 +169,9 @@ export default function ReportIncidentModal({
             setLocation("");
             setLocationInput("");
             setDescription("");
+            setLat(null);
+            setLng(null);
+            setIsAnonymous(false);
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred");
         } finally {
@@ -332,6 +351,20 @@ export default function ReportIncidentModal({
                                 className="w-full resize-none rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-bg-inset)] py-3 pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] focus:border-[var(--color-brand-default)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-default)]/20 transition-all cursor-text"
                             />
                         </div>
+                    </div>
+
+                    {/* Anonymous Reporting Option */}
+                    <div className="flex items-center gap-3 px-1">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isAnonymous}
+                                onChange={(e) => setIsAnonymous(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[var(--color-bg-inset)] peer-focus:outline-none rounded-full peer border border-[var(--color-border-default)] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-brand-default)]"></div>
+                            <span className="ml-3 text-xs font-bold text-[var(--color-text-secondary)]">Report Anonymously</span>
+                        </label>
                     </div>
 
                     {/* ── 911 Notice ──────────────────────────────────────── */}
