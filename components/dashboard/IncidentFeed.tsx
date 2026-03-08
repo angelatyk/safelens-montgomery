@@ -1,62 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import IncidentCard from "./IncidentCard";
 
-const INITIAL_INCIDENTS = [
-    {
-        id: "1",
-        title: "Potential Civil Disturbance: Market & 5th",
-        location: "Downtown Montgomery",
-        time: "14 mins ago",
-        isVerified: true,
-    },
-    {
-        id: "2",
-        title: "Road Hazard: Debris on I-65",
-        location: "I-65 Southbound",
-        time: "32 mins ago",
-        isVerified: false,
-    },
-    {
-        id: "3",
-        title: "Public Service: Water Main Leak",
-        location: "Cloverdale Neighborhood",
-        time: "1 hour ago",
-        isVerified: true,
-    },
-];
+const PAGE_SIZE = 10;
 
-const MORE_INCIDENTS = [
-    {
-        id: "4",
-        title: "Noise Complaint: 2nd Avenue",
-        location: "Old Cloverdale",
-        time: "2 hours ago",
-        isVerified: false,
-    },
-    {
-        id: "5",
-        title: "Traffic Signal Failure: Ann St",
-        location: "Capitol Heights",
-        time: "3 hours ago",
-        isVerified: true,
-    },
-];
+type Incident = {
+    id: string;
+    type: string;
+    neighborhood_id: string | null;
+    lat: string | null;
+    lng: string | null;
+    occurred_at: string;
+    source: string;
+    raw_data: {
+        address?: string;
+        department?: string;
+        status?: string;
+        district?: string;
+        origin?: string;
+        narrative?: string;
+    };
+    narratives?: { content: string }[];
+};
+
+function formatTime(occurred_at: string): string {
+    const diffMs = Date.now() - new Date(occurred_at).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return `${Math.floor(diffMins / 1440)} days ago`;
+}
 
 export default function IncidentFeed() {
-    const [incidents, setIncidents] = useState(INITIAL_INCIDENTS);
-    const [isLoading, setIsLoading] = useState(false);
+    const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [offset, setOffset] = useState(0);
 
-    const handleLoadMore = () => {
+    const fetchIncidents = async (currentOffset: number, append: boolean) => {
+        try {
+            const res = await fetch(
+                `/api/incidents?limit=${PAGE_SIZE}&offset=${currentOffset}`
+            );
+            if (!res.ok) throw new Error("Failed to fetch incidents");
+            const data = await res.json();
+
+            setIncidents((prev) =>
+                append ? [...prev, ...data.incidents] : data.incidents
+            );
+            setHasMore(data.incidents.length === PAGE_SIZE);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Something went wrong");
+        }
+    };
+
+    useEffect(() => {
         setIsLoading(true);
-        // Simulate API delay
-        setTimeout(() => {
-            setIncidents((prev) => [...prev, ...MORE_INCIDENTS]);
-            setIsLoading(false);
-            setHasMore(false); // For this demo, we only have one extra batch
-        }, 800);
+        fetchIncidents(0, false).finally(() => setIsLoading(false));
+    }, []);
+
+    const handleLoadMore = async () => {
+        const nextOffset = offset + PAGE_SIZE;
+        setIsLoadingMore(true);
+        await fetchIncidents(nextOffset, true);
+        setOffset(nextOffset);
+        setIsLoadingMore(false);
     };
 
     return (
@@ -70,26 +81,42 @@ export default function IncidentFeed() {
                 </span>
             </div>
 
-            {/* Feed list */}
             <div className="grid gap-4">
-                {incidents.map((incident) => (
-                    <IncidentCard
-                        key={incident.id}
-                        title={incident.id === "1" ? incident.title : incident.title}
-                        location={incident.location}
-                        time={incident.time}
-                        isVerified={incident.isVerified}
-                    />
-                ))}
-
                 {isLoading && (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+                    </div>
+                )}
+
+                {error && (
+                    <p className="text-center text-sm text-red-500 py-4">{error}</p>
+                )}
+
+                {!isLoading &&
+                    incidents.map((incident) => (
+                        <IncidentCard
+                            key={incident.id}
+                            title={incident.type}
+                            location={
+                                incident.raw_data?.address ||
+                                (incident.neighborhood_id ?? "Montgomery, AL")
+                            }
+                            time={formatTime(incident.occurred_at)}
+                            isVerified={incident.raw_data?.status === "Closed"}
+                            source={incident.source}
+                            narrative={incident.narratives?.[0]?.content ?? incident.raw_data?.narrative}
+                            department={incident.raw_data?.department}
+                        />
+                    ))}
+
+                {isLoadingMore && (
                     <div className="flex items-center justify-center py-8">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
                     </div>
                 )}
             </div>
 
-            {hasMore && !isLoading && (
+            {hasMore && !isLoadingMore && !isLoading && (
                 <button
                     onClick={handleLoadMore}
                     className="w-full cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border-default)] py-3 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]"
@@ -98,7 +125,7 @@ export default function IncidentFeed() {
                 </button>
             )}
 
-            {!hasMore && (
+            {!hasMore && !isLoading && (
                 <p className="text-center text-xs text-[var(--color-text-tertiary)] py-4">
                     All recent incidents have been loaded.
                 </p>
