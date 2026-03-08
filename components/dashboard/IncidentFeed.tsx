@@ -12,6 +12,11 @@ type Narrative = {
     generated_at: string;
     neighborhood_id: string | null;
     neighborhoods: { id: string; name: string } | null;
+    status: string;
+    resident_report_id: string | null;
+    vote_tally?: number;
+    title?: string;
+    model_used?: string;
 };
 
 function formatTime(occurred_at: string): string {
@@ -66,46 +71,89 @@ export default function IncidentFeed() {
 
 
 
+    const currentNarratives = narratives.filter(n => n.status === 'active' || n.status === 'verified');
+    const pastNarratives = narratives.filter(n => n.status === 'resolved');
+
     return (
-        <section className="flex flex-col gap-6">
-            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-4">
-                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-                    Safety Intelligence Feed
-                </h2>
-                <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:inline-block">
-                    Updating in real-time
-                </span>
+        <section className="flex flex-col gap-12">
+            {/* Current Safety Feed */}
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                        Safety Intelligence Feed
+                    </h2>
+                    <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:inline-block">
+                        Updating in real-time
+                    </span>
+                </div>
+
+                <div className="grid gap-4">
+                    {isLoading && (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+                        </div>
+                    )}
+
+                    {error && (
+                        <p className="text-center text-sm text-red-500 py-4">{error}</p>
+                    )}
+
+                    {!isLoading && currentNarratives.length === 0 && (
+                        <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">
+                            No active incidents at the moment.
+                        </p>
+                    )}
+
+                    {!isLoading &&
+                        currentNarratives.map((narrative) => (
+                            <IncidentCard
+                                key={narrative.id}
+                                id={narrative.id}
+                                reportId={narrative.resident_report_id || undefined}
+                                title={narrative.title}
+                                location={narrative.neighborhoods?.name || undefined}
+                                time={formatTime(narrative.generated_at)}
+                                source="ai"
+                                narrative={narrative.content}
+                                status={narrative.status}
+                                initialVoteTally={narrative.vote_tally}
+                                modelUsed={narrative.model_used}
+                            />
+                        ))}
+                </div>
             </div>
 
-            <div className="grid gap-4">
-                {isLoading && (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+            {/* Past Incidents Section */}
+            {pastNarratives.length > 0 && (
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-4">
+                        <h2 className="text-xl font-bold text-[var(--color-text-secondary)]">
+                            Past Incidents
+                        </h2>
+                        <span className="text-xs text-[var(--color-text-tertiary)]">
+                            Resolved
+                        </span>
                     </div>
-                )}
 
-                {error && (
-                    <p className="text-center text-sm text-red-500 py-4">{error}</p>
-                )}
-
-                {!isLoading &&
-                    narratives.map((narrative) => (
-                        <IncidentCard
-                            key={narrative.id}
-                            title="Safety Intelligence Summary"
-                            location={narrative.neighborhoods?.name || undefined}
-                            time={formatTime(narrative.generated_at)}
-                            source="ai"
-                            narrative={narrative.content}
-                        />
-                    ))}
-
-                {isLoadingMore && (
-                    <div className="flex items-center justify-center py-8">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+                    <div className="grid gap-4 opacity-80">
+                        {pastNarratives.map((narrative) => (
+                            <IncidentCard
+                                key={narrative.id}
+                                id={narrative.id}
+                                reportId={narrative.resident_report_id || undefined}
+                                title={narrative.title}
+                                location={narrative.neighborhoods?.name || undefined}
+                                time={formatTime(narrative.generated_at)}
+                                source="ai"
+                                narrative={narrative.content}
+                                status={narrative.status}
+                                initialVoteTally={narrative.vote_tally}
+                                modelUsed={narrative.model_used}
+                            />
+                        ))}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {hasMore && !isLoadingMore && !isLoading && (
                 <button
