@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ClockIcon, ChatBubbleBottomCenterTextIcon, CheckBadgeIcon, AdjustmentsHorizontalIcon, ArchiveBoxIcon } from "@heroicons/react/24/outline";
+import { ClockIcon, ChatBubbleBottomCenterTextIcon, CheckBadgeIcon, AdjustmentsHorizontalIcon, ArchiveBoxIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface Narrative {
     id: string;
@@ -16,11 +16,24 @@ interface Narrative {
 interface OfficialNarrativeQueueProps {
     selectedId: string | null;
     onSelect: (id: string) => void;
+    refreshTrigger?: number;
 }
 
-export default function OfficialNarrativeQueue({ selectedId, onSelect }: OfficialNarrativeQueueProps) {
+export default function OfficialNarrativeQueue({ selectedId, onSelect, refreshTrigger = 0 }: OfficialNarrativeQueueProps) {
     const [narratives, setNarratives] = useState<Narrative[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+        "Pending Review": true,
+        "Active": true,
+        "Resolved": false
+    });
+
+    const toggleSection = (title: string) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [title]: !prev[title]
+        }));
+    };
 
     const fetchNarratives = async () => {
         setIsLoading(true);
@@ -39,13 +52,13 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect }: Officia
 
     useEffect(() => {
         fetchNarratives();
-    }, []);
+    }, [refreshTrigger]);
 
     // Grouping logic
     const sections = useMemo(() => {
-        const active = narratives.filter(n => n.official_status === 'unreviewed');
-        const inProgress = narratives.filter(n => ['acknowledged', 'verified', 'dispatched'].includes(n.official_status));
-        const resolved = narratives.filter(n => n.official_status === 'resolved');
+        const active = narratives.filter(n => (n.official_status || 'unreviewed') === 'unreviewed');
+        const inProgress = narratives.filter(n => ['acknowledged', 'verified', 'dispatched'].includes(n.official_status || ''));
+        const resolved = narratives.filter(n => (n.official_status || '') === 'resolved');
 
         return [
             { title: "Pending Review", icon: ChatBubbleBottomCenterTextIcon, items: active, color: "text-[var(--color-critical)]" },
@@ -79,52 +92,61 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect }: Officia
                         {sections.map((section, idx) => (
                             <div key={section.title} className={idx !== 0 ? "mt-2" : ""}>
                                 {/* Sticky Header */}
-                                <div className="sticky top-0 z-10 bg-[var(--color-bg-surface)] px-4 py-2 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                                <div
+                                    onClick={() => toggleSection(section.title)}
+                                    className="sticky top-0 z-10 bg-[var(--color-bg-canvas)] px-4 py-2 border-y border-[var(--color-border-subtle)] flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
+                                >
                                     <div className="flex items-center gap-2">
+                                        {expandedSections[section.title] ? (
+                                            <ChevronDownIcon className="h-3 w-3 text-[var(--color-text-tertiary)]" />
+                                        ) : (
+                                            <ChevronRightIcon className="h-3 w-3 text-[var(--color-text-tertiary)]" />
+                                        )}
                                         <section.icon className={`h-4 w-4 ${section.color}`} />
                                         <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">
                                             {section.title}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] bg-[var(--color-bg-inset)] px-1.5 py-0.5 rounded text-[var(--color-text-tertiary)] font-bold">
+                                    <span className="text-[10px] bg-black/40 border border-white/5 px-1.5 py-0.5 rounded text-[var(--color-text-tertiary)] font-bold">
                                         {section.items.length}
                                     </span>
                                 </div>
 
-                                <div className="divide-y divide-[var(--color-border-subtle)]">
-                                    {section.items.length === 0 ? (
-                                        <p className="px-5 py-4 text-[10px] italic text-[var(--color-text-tertiary)] bg-[var(--color-bg-subtle)]/30">
-                                            No narratives in this status.
-                                        </p>
-                                    ) : (
-                                        section.items.map((n) => (
-                                            <div
-                                                key={n.id}
-                                                onClick={() => onSelect(n.id)}
-                                                className={`
+                                {expandedSections[section.title] && (
+                                    <div className="divide-y divide-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+                                        {section.items.length === 0 ? (
+                                            <p className="px-5 py-4 text-[10px] italic text-[var(--color-text-tertiary)] bg-[var(--color-bg-subtle)]/30">
+                                                No narratives in this status.
+                                            </p>
+                                        ) : (
+                                            section.items.map((n) => (
+                                                <div
+                                                    key={n.id}
+                                                    onClick={() => onSelect(n.id)}
+                                                    className={`
                                                     relative p-4 cursor-pointer transition-all hover:bg-[var(--color-bg-subtle)]
                                                     ${selectedId === n.id ? "bg-[var(--color-brand-default)]/5 shadow-[inset_3px_0_0_var(--color-brand-default)]" : ""}
                                                 `}
-                                            >
-                                                <div className="flex items-start justify-between mb-1.5">
-                                                    <span className="text-[10px] font-bold text-[var(--color-brand-default)] uppercase">
-                                                        {n.neighborhoods?.name || "Global"}
-                                                    </span>
-                                                    <span className="text-[9px] text-[var(--color-text-tertiary)] flex items-center gap-1">
-                                                        <ClockIcon className="h-2.5 w-2.5" />
-                                                        {new Date(n.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                >
+                                                    <div className="flex items-start justify-between mb-1.5">
+                                                        <span className="text-[10px] font-bold text-[var(--color-brand-default)] uppercase">
+                                                            {n.neighborhoods?.name || "Global"}
+                                                        </span>
+                                                        <span className="text-[9px] text-[var(--color-text-tertiary)] flex items-center gap-1">
+                                                            <ClockIcon className="h-2.5 w-2.5" />
+                                                            {new Date(n.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className={`text-sm font-bold leading-tight line-clamp-1 mb-1 ${selectedId === n.id ? "text-[var(--color-brand-default)]" : "text-[var(--color-text-primary)]"}`}>
+                                                        {n.title || "Safety Intelligence Summary"}
+                                                    </h3>
+                                                    <p className="text-xs text-[var(--color-text-tertiary)] line-clamp-2 leading-relaxed">
+                                                        {n.content}
+                                                    </p>
                                                 </div>
-                                                <h3 className={`text-sm font-bold leading-tight line-clamp-1 mb-1 ${selectedId === n.id ? "text-[var(--color-brand-default)]" : "text-[var(--color-text-primary)]"}`}>
-                                                    {n.title || "Safety Intelligence Summary"}
-                                                </h3>
-                                                <p className="text-xs text-[var(--color-text-tertiary)] line-clamp-2 leading-relaxed">
-                                                    {n.content}
-                                                </p>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
+                                            )))}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

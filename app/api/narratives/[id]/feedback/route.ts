@@ -118,3 +118,41 @@ export async function POST(
 
     return NextResponse.json({ success: true });
 }
+
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id: narrativeId } = await params;
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+    const { data: votes, error } = await supabaseAdmin
+        .from("narrative_feedback")
+        .select("vote, created_at")
+        .eq("narrative_id", narrativeId);
+
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const total = votes.length;
+    const accurate = votes.filter(v => v.vote === 'accurate').length;
+    const notRelevant = votes.filter(v => v.vote === 'not_relevant').length;
+
+    const recentVotes = votes.filter(v => v.created_at >= fifteenMinsAgo);
+    const recentAccurate = recentVotes.filter(v => v.vote === 'accurate').length;
+    const recentNotRelevant = recentVotes.filter(v => v.vote === 'not_relevant').length;
+
+    return NextResponse.json({
+        stats: {
+            total,
+            accurate,
+            notRelevant,
+            recent: {
+                total: recentVotes.length,
+                accurate: recentAccurate,
+                notRelevant: recentNotRelevant
+            }
+        }
+    });
+}
