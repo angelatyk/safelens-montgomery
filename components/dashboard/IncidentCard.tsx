@@ -14,11 +14,12 @@ const SOURCE_LABELS: Record<string, string> = {
     city: "City of Montgomery",
     resident: "Community Report",
     news: "News Report",
+    ai: "AI Analysis",
 };
 
 export default function IncidentCard({
     title = "Incident",
-    location = "Montgomery, AL",
+    location,
     time = "Just now",
     isVerified = false,
     source = "city",
@@ -52,10 +53,12 @@ export default function IncidentCard({
 
                 {/* Footer: Metadata */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 border-t border-[var(--color-border-subtle)]">
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
-                        <MapPinIcon className="h-3.5 w-3.5" />
-                        {location}
-                    </div>
+                    {location && (
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                            <MapPinIcon className="h-3.5 w-3.5" />
+                            {location}
+                        </div>
+                    )}
                     <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
                         <ClockIcon className="h-3.5 w-3.5" />
                         {time}

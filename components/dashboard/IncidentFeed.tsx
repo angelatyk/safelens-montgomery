@@ -6,23 +6,12 @@ import IncidentCard from "./IncidentCard";
 
 const PAGE_SIZE = 10;
 
-type Incident = {
+type Narrative = {
     id: string;
-    type: string;
+    content: string;
+    generated_at: string;
     neighborhood_id: string | null;
-    lat: string | null;
-    lng: string | null;
-    occurred_at: string;
-    source: string;
-    raw_data: {
-        address?: string;
-        department?: string;
-        status?: string;
-        district?: string;
-        origin?: string;
-        narrative?: string;
-    };
-    narratives?: { content: string }[];
+    neighborhoods: { id: string; name: string } | null;
 };
 
 function formatTime(occurred_at: string): string {
@@ -34,25 +23,25 @@ function formatTime(occurred_at: string): string {
 }
 
 export default function IncidentFeed() {
-    const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [narratives, setNarratives] = useState<Narrative[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [offset, setOffset] = useState(0);
 
-    const fetchIncidents = async (currentOffset: number, append: boolean) => {
+    const fetchNarratives = async (currentOffset: number, append: boolean) => {
         try {
             const res = await fetch(
-                `/api/incidents?limit=${PAGE_SIZE}&offset=${currentOffset}`
+                `/api/narratives?limit=${PAGE_SIZE}&offset=${currentOffset}`
             );
-            if (!res.ok) throw new Error("Failed to fetch incidents");
+            if (!res.ok) throw new Error("Failed to fetch narratives");
             const data = await res.json();
 
-            setIncidents((prev) =>
-                append ? [...prev, ...data.incidents] : data.incidents
+            setNarratives((prev) =>
+                append ? [...prev, ...data.narratives] : data.narratives
             );
-            setHasMore(data.incidents.length === PAGE_SIZE);
+            setHasMore(data.narratives.length === PAGE_SIZE);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong");
         }
@@ -60,27 +49,22 @@ export default function IncidentFeed() {
 
     useEffect(() => {
         setIsLoading(true);
-        fetchIncidents(0, false).finally(() => setIsLoading(false));
+        fetchNarratives(0, false).finally(() => setIsLoading(false));
     }, []);
 
     useEffect(() => {
         // Refresh the feed when a new incident is reported via the TopBar modal
+        // Though narratives are AI-generated, we might want to refresh anyway 
+        // if the system triggers a new generation on report.
         const handleIncidentReported = () => {
             setOffset(0);
-            fetchIncidents(0, false);
+            fetchNarratives(0, false);
         };
         window.addEventListener('incidentReported', handleIncidentReported);
         return () => window.removeEventListener('incidentReported', handleIncidentReported);
     }, []);
 
 
-    const handleLoadMore = async () => {
-        const nextOffset = offset + PAGE_SIZE;
-        setIsLoadingMore(true);
-        await fetchIncidents(nextOffset, true);
-        setOffset(nextOffset);
-        setIsLoadingMore(false);
-    };
 
     return (
         <section className="flex flex-col gap-6">
@@ -105,19 +89,14 @@ export default function IncidentFeed() {
                 )}
 
                 {!isLoading &&
-                    incidents.map((incident) => (
+                    narratives.map((narrative) => (
                         <IncidentCard
-                            key={incident.id}
-                            title={incident.type}
-                            location={
-                                incident.raw_data?.address ||
-                                (incident.neighborhood_id ?? "Montgomery, AL")
-                            }
-                            time={formatTime(incident.occurred_at)}
-                            isVerified={incident.raw_data?.status === "Closed"}
-                            source={incident.source}
-                            narrative={incident.narratives?.[0]?.content ?? incident.raw_data?.narrative}
-                            department={incident.raw_data?.department}
+                            key={narrative.id}
+                            title="Safety Intelligence Summary"
+                            location={narrative.neighborhoods?.name || undefined}
+                            time={formatTime(narrative.generated_at)}
+                            source="ai"
+                            narrative={narrative.content}
                         />
                     ))}
 
@@ -130,16 +109,22 @@ export default function IncidentFeed() {
 
             {hasMore && !isLoadingMore && !isLoading && (
                 <button
-                    onClick={handleLoadMore}
+                    onClick={async () => {
+                        const nextOffset = offset + PAGE_SIZE;
+                        setIsLoadingMore(true);
+                        await fetchNarratives(nextOffset, true);
+                        setOffset(nextOffset);
+                        setIsLoadingMore(false);
+                    }}
                     className="w-full cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border-default)] py-3 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]"
                 >
-                    View More Incidents
+                    View More Summaries
                 </button>
             )}
 
             {!hasMore && !isLoading && (
                 <p className="text-center text-xs text-[var(--color-text-tertiary)] py-4">
-                    All recent incidents have been loaded.
+                    All recent safety summaries have been loaded.
                 </p>
             )}
         </section>
