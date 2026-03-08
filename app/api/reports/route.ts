@@ -13,23 +13,22 @@ export async function POST(request: Request) {
 
         // Parse the body
         const body = await request.json();
-        const { category, description } = body;
+        const { category, description, location, lat, lng, is_anonymous } = body;
 
         if (!category) {
             return NextResponse.json({ error: "Category is required" }, { status: 400 });
         }
-
-        // Connect to Supabase with service role for admin insert, or just use user client
-        // Using service role to ensure insert succeeds regardless of RLS, 
-        // OR we can use the authenticated client if RLS is set up properly for insertions.
-        // Let's use the authenticated client first so RLS is respected and user_id is automatically associated.
-        // The resident_reports table might expect lat/lng which we can omit for now.
 
         const { error } = await supabaseAuth
             .from("resident_reports")
             .insert({
                 category,
                 description,
+                address: location,
+                lat,
+                lng,
+                is_anonymous: !!is_anonymous,
+                created_by: is_anonymous ? null : user.id,
                 status: "submitted"
             });
 
