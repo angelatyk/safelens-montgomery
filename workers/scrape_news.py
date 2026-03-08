@@ -185,12 +185,14 @@ def fetch_google_news(query):
             if not headline or not link:
                 continue
 
+            relevance = score_relevance(headline)
+
             articles.append({
                 "headline": headline,
                 "source": source,
                 "url": link,
                 "published_at": parse_pub_date(pub_date),
-                "relevance_score": 0,
+                "relevance_score": relevance,
             })
     except Exception as e:
         print(f"  Error fetching '{query}': {e}")
@@ -259,7 +261,7 @@ def scrape():
         for feed in DIRECT_FEEDS:
             print(f"  {feed['name']}...")
             articles = fetch_direct_rss(feed)
-            new = [a for a in articles if a["url"] not in existing_urls]
+            new = [a for a in articles if a["url"] not in existing_urls and a["relevance_score"] >= 0.15]
             if new:
                 supabase.table("news_articles").insert(new).execute()
                 total_new += len(new)
@@ -276,7 +278,7 @@ def scrape():
     for query in GOOGLE_QUERIES:
         print(f"  '{query}'...")
         articles = fetch_google_news(query)
-        new = [a for a in articles if a["url"] not in existing_urls]
+        new = [a for a in articles if a["url"] not in existing_urls and a["relevance_score"] >= 0.15]
         if new:
             supabase.table("news_articles").insert(new).execute()
             total_new += len(new)

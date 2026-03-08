@@ -125,8 +125,8 @@ BRIGHT_DATA_ZONE=web_unlocker1
 
 ---
 
-## Team
+<!-- ## Team
 
 - **Angela** — Database schema, auth, frontend
 - **VB** — FBI/Weather data, RSS feeds, geo-mapping (notebook)
-- **Andres** — NLP pipeline, scrapers, feedback loop, integration
+- **Andres** — NLP pipeline, scrapers, feedback loop, integration -->

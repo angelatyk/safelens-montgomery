@@ -22,6 +22,7 @@ import re
 import math
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+import requests
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -1014,5 +1015,21 @@ def run_pipeline():
                 print(f"     Neighborhoods: {', '.join(hood_names)}")
 
 
+def trigger_narrative_generation(base_url="http://localhost:3000"):
+    """Trigger AI narrative generation after pipeline completes."""
+    try:
+        resp = requests.post(f"{base_url}/api/narratives/generate", timeout=120)
+        if resp.status_code == 200:
+            data = resp.json()
+            print(f"  Generated {data.get('generated', 0)} narratives")
+        else:
+            print(f"  Narrative generation returned {resp.status_code}: {resp.text[:200]}")
+    except Exception as e:
+        print(f"  Could not reach narrative endpoint: {e}")
+
+
 if __name__ == "__main__":
     run_pipeline()
+
+    print("\n[9/9] Triggering AI narrative generation...")
+    trigger_narrative_generation()

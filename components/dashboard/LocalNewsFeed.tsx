@@ -1,6 +1,6 @@
 "use client";
 
-import { NewspaperIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { NewspaperIcon, ArrowTopRightOnSquareIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 
 interface NewsArticle {
@@ -10,6 +10,7 @@ interface NewsArticle {
     url: string | null;
     published_at: string | null;
     relevance_score: number;
+    ai_summary: string | null;
 }
 
 function formatRelativeTime(dateString: string | null) {
@@ -60,7 +61,7 @@ export default function LocalNewsFeed() {
                         Public Safety News Feed
                     </h2>
                     <span className="text-[10px] text-[var(--color-text-tertiary)] mt-1 font-medium uppercase tracking-wider">
-                        Real-time Montgomery updates
+                        Local Montgomery safety updates
                     </span>
                 </div>
             </div>
@@ -85,6 +86,11 @@ export default function LocalNewsFeed() {
                             <h3 className="text-sm font-medium leading-snug text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-default)] transition-colors line-clamp-2">
                                 {article.headline}
                             </h3>
+                            {article.ai_summary && (
+                                <p className="text-xs leading-relaxed text-[var(--color-text-secondary)] line-clamp-2">
+                                    {article.ai_summary}
+                                </p>
+                            )}
                             {article.url && (
                                 <a
                                     href={article.url}
@@ -105,7 +111,8 @@ export default function LocalNewsFeed() {
 
             <div className="mt-2 rounded-[var(--radius-sm)] border border-[var(--color-ai-border)] bg-[var(--color-ai-bg)] p-3">
                 <p className="text-[11px] leading-relaxed text-[var(--color-navy-200)]">
-                    <span className="font-bold text-[var(--color-ai)]">AI Insight:</span> Bright Data scraping identifies a correlation between recent news trends and emerging safety reports in the Cloverdale area.
+                    <SparklesIcon className="inline h-3.5 w-3.5 mr-1 text-[var(--color-ai)]" />
+                    <span className="font-bold text-[var(--color-ai)]">AI Filtered:</span> Showing only verified public safety news from local Montgomery sources. Non-safety content is automatically excluded.
                 </p>
             </div>
         </aside>
