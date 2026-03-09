@@ -67,7 +67,7 @@ The application utilizes a dual-model AI architecture:
 **The Pipeline Flow**: 
 *Collect* → *Classify* → *Cluster (TF-IDF)* → *Score (Credibility)* → *Incident Validation* → *Narrative Generation* → *Community Feedback Loop*
 
-## 🛠️ Architecture & Technology Stack
+## 🛠️ Architecture
 
 ### System Flow
 ```text
@@ -106,6 +106,7 @@ The application utilizes a dual-model AI architecture:
                  └───────────────────────┘                               └───────────────────────┘
 ```
 
+### Technology Stack
 - **Frontend / API Layer**: Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui.
 - **Database & Auth**: Supabase (PostgreSQL, Auth, Realtime).
 - **Data Ingestion/Backend**: Python NLP workers deployed via Railway.
