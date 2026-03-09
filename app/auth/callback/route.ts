@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUserRole } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     const { searchParams, origin } = new URL(request.url);
@@ -17,13 +18,7 @@ export async function GET(request: NextRequest) {
             } = await supabase.auth.getUser();
 
             if (user) {
-                const { data } = await supabase
-                    .from("users")
-                    .select("role")
-                    .eq("id", user.id)
-                    .single();
-
-                const role = data?.role ?? "resident";
+                const role = await getServerUserRole();
                 const redirectPath =
                     role === "official" || role === "dispatcher" ? "/official" : next;
 

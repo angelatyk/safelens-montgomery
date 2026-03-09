@@ -5,39 +5,14 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
 import { useUser } from "@/lib/hooks/useUser";
-import { supabase } from "@/lib/supabase/client";
-
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [displayName, setDisplayName] = useState<string | null>(null);
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const pathname = usePathname();
-    const { user } = useUser();
-
-    // Fetch the user's display name and avatar whenever their auth state changes
-    useEffect(() => {
-        if (!user) {
-            setDisplayName(null);
-            setAvatarUrl(null);
-            return;
-        }
-
-        supabase
-            .from("users")
-            .select("display_name, avatar_url")
-            .eq("id", user.id)
-            .single()
-            .then(({ data }) => {
-                if (data) {
-                    setDisplayName(data.display_name);
-                    setAvatarUrl(data.avatar_url);
-                }
-            });
-    }, [user]);
+    const { user, displayName, avatarUrl } = useUser();
 
     // Determine role based on path
     const role = pathname?.startsWith("/official") ? "official" : "resident";

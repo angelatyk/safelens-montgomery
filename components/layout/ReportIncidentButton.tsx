@@ -1,32 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser } from "@/lib/hooks/useUser";
-import { supabase } from "@/lib/supabase/client";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ReportIncidentModal from "@/components/dashboard/ReportIncidentModal";
 
 export default function ReportButton() {
-    const { user, isLoading } = useUser();
-    const [userRole, setUserRole] = useState<string | null>(null);
+    const { user, role: userRole, isLoading } = useUser();
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-
-    // Fetch the user's role whenever their auth state changes
-    useEffect(() => {
-        if (!user) {
-            setUserRole(null);
-            return;
-        }
-
-        supabase
-            .from("users")
-            .select("role")
-            .eq("id", user.id)
-            .single()
-            .then(({ data, error }) => {
-                if (!error && data) setUserRole(data.role);
-            });
-    }, [user]);
 
     if (isLoading || !user || userRole !== "resident") return null;
 
