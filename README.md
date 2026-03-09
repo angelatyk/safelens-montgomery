@@ -127,4 +127,3 @@ SafeLens acts as a pilot for a deployable SaaS platform. Future roadmap items in
 - **Angela Kwok** (Team Lead) - [github.com/angelatyk](https://github.com/angelatyk)
 - **Andres Linero** - [github.com/andres-linero](https://github.com/andres-linero)
 - **Varoun Bajaj** - [github.com/varounbajaj-proj](https://github.com/varounbajaj-proj)
-- **Robert K. Cummings Jr** - [github.com/Dadillacrob1001](https://github.com/Dadillacrob1001)
