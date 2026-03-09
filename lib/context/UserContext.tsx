@@ -54,11 +54,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
         let mounted = true;
 
         async function getInitialSession() {
-            const { data } = await supabase.auth.getSession();
-            if (!mounted) return;
-            setUser(data.session?.user ?? null);
-            if (data.session?.user) await fetchProfile(data.session.user);
-            if (mounted) setIsLoading(false);
+            try {
+                const { data } = await supabase.auth.getSession();
+                if (!mounted) return;
+                setUser(data.session?.user ?? null);
+                if (data.session?.user) await fetchProfile(data.session.user);
+            } catch (e) {
+                console.warn('Session fetch aborted', e);
+            } finally {
+                if (mounted) setIsLoading(false);
+            }
         }
 
         getInitialSession();
@@ -69,7 +74,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 if (_event === "INITIAL_SESSION") return; // already handled above
                 setUser(session?.user ?? null);
                 if (session?.user) {
-                    await fetchProfile(session.user);
+                    try {
+                        await fetchProfile(session.user);
+                    } catch (e) {
+                        console.warn('fetchProfile aborted', e);
+                    }
                 } else {
                     setRole(null);
                     setDisplayName(null);
