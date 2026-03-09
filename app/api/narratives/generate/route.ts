@@ -283,6 +283,14 @@ export async function POST(request: Request) {
                 if (insertErr) {
                     errors.push(`Insert error for incident ${incident.id}: ${insertErr.message}`);
                 } else if (inserted) {
+                    // Link narrative to source incident via junction table
+                    const { error: linkErr } = await supabaseAdmin
+                        .from("narrative_incidents")
+                        .insert({ narrative_id: inserted.id, incident_id: incident.id });
+                    if (linkErr) {
+                        console.warn(`[generate] Failed to link narrative ${inserted.id} to incident ${incident.id}: ${linkErr.message}`);
+                    }
+
                     existingHashes.add(hash);
                     results.push({ source: "incident", title, id: inserted.id });
                     processed++;
@@ -331,6 +339,14 @@ export async function POST(request: Request) {
                 if (insertErr) {
                     errors.push(`Insert error for article ${article.id}: ${insertErr.message}`);
                 } else if (inserted) {
+                    // Link narrative to source news article via junction table
+                    const { error: linkErr } = await supabaseAdmin
+                        .from("narrative_news_articles")
+                        .insert({ narrative_id: inserted.id, news_article_id: article.id });
+                    if (linkErr) {
+                        console.warn(`[generate] Failed to link narrative ${inserted.id} to article ${article.id}: ${linkErr.message}`);
+                    }
+
                     existingHashes.add(hash);
                     results.push({ source: "news", title, id: inserted.id });
                     processed++;

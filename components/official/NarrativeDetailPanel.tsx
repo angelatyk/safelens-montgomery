@@ -18,7 +18,8 @@ import {
     ArchiveBoxIcon,
     ClockIcon,
     XMarkIcon,
-    UserCircleIcon
+    UserCircleIcon,
+    ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
 import { useUser } from "@/lib/hooks/useUser";
 
@@ -56,6 +57,40 @@ interface FeedbackStats {
     }
 }
 
+interface LinkedIncident {
+    id: string;
+    type: string;
+    source: string | null;
+    headline: string | null;
+    severity: string | null;
+    credibility_score: number | null;
+    occurred_at: string | null;
+    neighborhood: string | null;
+}
+
+interface LinkedArticle {
+    id: string;
+    headline: string;
+    source: string | null;
+    url: string | null;
+    published_at: string | null;
+    relevance_score: number;
+}
+
+interface LinkedReport {
+    id: string;
+    category: string;
+    description: string | null;
+    status: string;
+    created_at: string;
+}
+
+interface SourceData {
+    incidents: LinkedIncident[];
+    articles: LinkedArticle[];
+    residentReport: LinkedReport | null;
+}
+
 interface PublicUpdate {
     id: string;
     content: string;
@@ -80,6 +115,7 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
     const [officialUpdate, setOfficialUpdate] = useState("");
     const [pendingStatus, setPendingStatus] = useState("");
     const [feedbackStats, setFeedbackStats] = useState<FeedbackStats | null>(null);
+    const [sources, setSources] = useState<SourceData | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -119,6 +155,18 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
         }
     };
 
+    const fetchSources = async (id: string) => {
+        try {
+            const res = await fetch(`/api/narratives/${id}/sources`);
+            if (res.ok) {
+                const data = await res.json();
+                setSources(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch sources", err);
+        }
+    };
+
     const fetchDetail = async (id: string) => {
         setIsLoading(true);
         try {
@@ -138,6 +186,7 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
             fetchComments(id);
             fetchPublicUpdates(id);
             fetchFeedback(id);
+            fetchSources(id);
         } catch (err) {
             console.error("Failed to fetch narrative detail", err);
         } finally {
@@ -147,9 +196,11 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
 
     useEffect(() => {
         if (narrativeId) {
+            setSources(null);
             fetchDetail(narrativeId);
         } else {
             setNarrative(null);
+            setSources(null);
         }
     }, [narrativeId]);
 
@@ -293,7 +344,7 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                     </p>
                 </section>
 
-                {/* Data Sources Grid */}
+                {/* Data Sources Grid — live counts from junction tables */}
                 <section className="space-y-3">
                     <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-tight">Linked Data Sources</h3>
                     <div className="grid grid-cols-3 gap-3">
