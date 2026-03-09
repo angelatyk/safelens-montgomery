@@ -119,7 +119,7 @@ export default function IncidentCard({
                                 <button
                                     onClick={() => handleFeedback('accurate')}
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[var(--color-success-bg)] text-[var(--color-success)] rounded-full hover:brightness-95 transition-all border border-[var(--color-success-border)] disabled:opacity-50"
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[var(--color-success-bg)] text-[var(--color-success)] rounded-full hover:brightness-95 transition-all border border-[var(--color-success-border)] disabled:opacity-50 cursor-pointer"
                                 >
                                     <CheckCircleIcon className="h-3 w-3" />
                                     Still ongoing
@@ -127,7 +127,7 @@ export default function IncidentCard({
                                 <button
                                     onClick={() => handleFeedback('not_relevant')}
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[var(--color-error-bg)] text-[var(--color-error)] rounded-full hover:brightness-95 transition-all border border-[var(--color-error-border)] disabled:opacity-50"
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-[var(--color-error-bg)] text-[var(--color-error)] rounded-full hover:brightness-95 transition-all border border-[var(--color-error-border)] disabled:opacity-50 cursor-pointer"
                                 >
                                     <XCircleIcon className="h-3 w-3" />
                                     No longer active
