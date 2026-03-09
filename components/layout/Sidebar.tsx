@@ -88,9 +88,16 @@ export default function Sidebar({
     const navItems = role === "official" ? OFFICIAL_NAV : RESIDENT_NAV;
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
-        router.push("/");
-        router.refresh();
+        try {
+            await fetch("/api/auth/signout", {
+                method: "POST",
+            });
+        } finally {
+            // Also call client-side signout as fallback and to clear local state immediately
+            await supabase.auth.signOut();
+            router.push("/");
+            router.refresh();
+        }
     };
 
     return (
