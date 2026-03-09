@@ -1,17 +1,15 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 /**
- * A module-level singleton browser Supabase client.
- *
- * Use this everywhere in Client Components and browser-side code.
- * Never call `createBrowserClient` directly in component bodies or
- * effects — import this singleton instead so all components share the
- * same session and auth state.
- *
- * NOTE: The server-side client (`lib/supabase/server.ts`) must still
- * be created per-request because it reads cookies dynamically.
+ * Creates a new Supabase browser client.
+ * 
+ * IMPORTANT: Because of inner locking mechanisms in @supabase/ssr, 
+ * this should ONLY be called once inside the root UserProvider (via useState),
+ * and then passed down via React Context. Do not call this directly in components.
  */
-export const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export function createClient() {
+    return createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+}

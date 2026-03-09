@@ -107,7 +107,7 @@ interface Props {
 }
 
 export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }: Props) {
-    const { user } = useUser();
+    const { user, supabase } = useUser();
     const [narrative, setNarrative] = useState<NarrativeDetail | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [publicUpdates, setPublicUpdates] = useState<PublicUpdate[]>([]);

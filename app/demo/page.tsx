@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import AuthForm from "@/components/auth/AuthForm";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { redirectAfterLogin } from "@/lib/auth-client";
 import {
     UserIcon,
@@ -37,6 +37,7 @@ const DEMO_ACCOUNTS = {
 
 export default function DemoPage() {
     const router = useRouter();
+    const supabase = createClient();
     const [loading, setLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +58,7 @@ export default function DemoPage() {
             return;
         }
 
-        await redirectAfterLogin(router);
+        await redirectAfterLogin(router, supabase);
     };
 
     return (

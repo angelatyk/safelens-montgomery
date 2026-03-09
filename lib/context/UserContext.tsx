@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/client";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from "react";
+import { User, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 interface UserContextValue {
+    supabase: SupabaseClient;
     user: User | null;
     role: string | null;
     displayName: string | null;
@@ -13,6 +14,7 @@ interface UserContextValue {
 }
 
 const UserContext = createContext<UserContextValue>({
+    supabase: null as any, // initial value before mount
     user: null,
     role: null,
     displayName: null,
@@ -21,6 +23,9 @@ const UserContext = createContext<UserContextValue>({
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
+    // Instantiate exactly once per provider lifecycle
+    const supabase = useMemo(() => createClient(), []);
+
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [displayName, setDisplayName] = useState<string | null>(null);
@@ -69,7 +74,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         getInitialSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
+            async (_event: string, session: any) => {
                 if (!mounted) return;
                 if (_event === "INITIAL_SESSION") return; // already handled above
                 setUser(session?.user ?? null);
@@ -95,7 +100,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <UserContext.Provider value={{ user, role, displayName, avatarUrl, isLoading }}>
+        <UserContext.Provider value={{ supabase, user, role, displayName, avatarUrl, isLoading }}>
             {children}
         </UserContext.Provider>
     );

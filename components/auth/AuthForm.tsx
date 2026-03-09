@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/auth/AuthButton";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { redirectAfterLogin } from "@/lib/auth-client";
 import {
     EnvelopeIcon,
@@ -15,6 +15,7 @@ import {
 
 export default function AuthForm() {
     const router = useRouter();
+    const supabase = createClient();
 
     const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
     const [loading, setLoading] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function AuthForm() {
             return;
         }
 
-        await redirectAfterLogin(router);
+        await redirectAfterLogin(router, supabase);
     };
 
     // Email sign up

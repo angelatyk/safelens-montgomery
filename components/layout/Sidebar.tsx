@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { useUser } from "@/lib/context/UserContext";
 
 interface NavItem {
     name: string;
@@ -56,6 +56,7 @@ export default function Sidebar({
 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const { supabase } = useUser();
     const [activeCount, setActiveCount] = useState<number | null>(null);
 
     const fetchActiveCount = async () => {
