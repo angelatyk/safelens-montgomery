@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     SparklesIcon,
     MapPinIcon,
@@ -118,90 +118,107 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
     const [sources, setSources] = useState<SourceData | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [notFound, setNotFound] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
-    const fetchComments = async (id: string) => {
+    const fetchComments = async (id: string, signal?: AbortSignal) => {
         try {
-            const res = await fetch(`/api/narratives/${id}/comments?official=true`);
+            const res = await fetch(`/api/narratives/${id}/comments?official=true`, { signal });
             if (res.ok) {
                 const data = await res.json();
                 setComments(data.comments || []);
             }
-        } catch (err) {
-            console.error("Failed to fetch comments", err);
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') console.error("Failed to fetch comments", err);
         }
     };
 
-    const fetchPublicUpdates = async (id: string) => {
+    const fetchPublicUpdates = async (id: string, signal?: AbortSignal) => {
         try {
-            const res = await fetch(`/api/narratives/${id}/public-updates`);
+            const res = await fetch(`/api/narratives/${id}/public-updates`, { signal });
             if (res.ok) {
                 const data = await res.json();
                 setPublicUpdates(data.updates || []);
             }
-        } catch (err) {
-            console.error("Failed to fetch public updates", err);
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') console.error("Failed to fetch public updates", err);
         }
     };
 
-    const fetchFeedback = async (id: string) => {
+    const fetchFeedback = async (id: string, signal?: AbortSignal) => {
         try {
-            const res = await fetch(`/api/narratives/${id}/feedback`);
+            const res = await fetch(`/api/narratives/${id}/feedback`, { signal });
             if (res.ok) {
                 const data = await res.json();
                 setFeedbackStats(data.stats);
             }
-        } catch (err) {
-            console.error("Failed to fetch feedback", err);
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') console.error("Failed to fetch feedback", err);
         }
     };
 
-    const fetchSources = async (id: string) => {
+    const fetchSources = async (id: string, signal?: AbortSignal) => {
         try {
-            const res = await fetch(`/api/narratives/${id}/sources`);
+            const res = await fetch(`/api/narratives/${id}/sources`, { signal });
             if (res.ok) {
                 const data = await res.json();
                 setSources(data);
             }
-        } catch (err) {
-            console.error("Failed to fetch sources", err);
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') console.error("Failed to fetch sources", err);
         }
     };
 
-    const fetchDetail = async (id: string) => {
+    const fetchDetail = async (id: string, signal: AbortSignal) => {
         setIsLoading(true);
+        setNotFound(false);
         try {
-            // In a real app, this would be a single detail endpoint
-            const res = await fetch("/api/narratives");
+            const res = await fetch(`/api/narratives/${id}`, { signal });
             if (res.ok) {
                 const data = await res.json();
-                const found = data.narratives.find((n: NarrativeDetail) => n.id === id);
-                if (found) {
-                    setNarrative(found);
-                    // Always start with empty inputs for the threaded feeds
-                    setOfficialUpdate("");
-                    setNewOfficialNote("");
-                    setPendingStatus(found.official_status || "unreviewed");
-                }
+                setNarrative(data);
+                setOfficialUpdate("");
+                setNewOfficialNote("");
+                setPendingStatus(data.official_status || "unreviewed");
+            } else if (res.status === 404) {
+                setNarrative(null);
+                setNotFound(true);
             }
-            fetchComments(id);
-            fetchPublicUpdates(id);
-            fetchFeedback(id);
-            fetchSources(id);
-        } catch (err) {
-            console.error("Failed to fetch narrative detail", err);
+            // Fire sub-fetches in parallel, all sharing the same abort signal
+            fetchComments(id, signal);
+            fetchPublicUpdates(id, signal);
+            fetchFeedback(id, signal);
+            fetchSources(id, signal);
+        } catch (err: any) {
+            if (err?.name !== 'AbortError') {
+                console.error("Failed to fetch narrative detail", err);
+            }
         } finally {
-            setIsLoading(false);
+            if (!signal.aborted) {
+                setIsLoading(false);
+            }
         }
     };
 
     useEffect(() => {
+        // Abort any in-flight fetch from the previous selection
+        abortControllerRef.current?.abort();
+
         if (narrativeId) {
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
             setSources(null);
-            fetchDetail(narrativeId);
+            fetchDetail(narrativeId, controller.signal);
         } else {
+            abortControllerRef.current = null;
             setNarrative(null);
             setSources(null);
+            setNotFound(false);
         }
+
+        return () => {
+            abortControllerRef.current?.abort();
+        };
     }, [narrativeId]);
 
     const handleUpdateRecord = async (overrideStatus?: string) => {
@@ -284,10 +301,21 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
         );
     }
 
-    if (isLoading || !narrative) {
+    if (isLoading) {
         return (
             <div className="flex h-full items-center justify-center">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+            </div>
+        );
+    }
+
+    if (notFound || !narrative) {
+        return (
+            <div className="flex h-full items-center justify-center p-8 text-center">
+                <div className="space-y-3 max-w-xs">
+                    <ExclamationTriangleIcon className="mx-auto h-10 w-10 text-[var(--color-text-tertiary)] opacity-30" />
+                    <p className="text-sm text-[var(--color-text-tertiary)] font-medium">Narrative not found or no longer available.</p>
+                </div>
             </div>
         );
     }
