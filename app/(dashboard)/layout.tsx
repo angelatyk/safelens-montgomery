@@ -58,8 +58,15 @@ export default function DashboardLayout({
             />
 
             {/* Main Content Area - Shifted for Sidebar on Desktop */}
-            <div className="transition-all duration-[var(--duration-normal)] lg:pl-64">
-                <main className={`min-h-[calc(100vh-64px)] pt-16 ${role === 'official' ? 'h-screen pb-8 overflow-hidden' : 'pb-12'}`}>
+            <div className={`
+                transition-all duration-[var(--duration-normal)] lg:pl-64
+                ${role === 'official' ? 'fixed top-16 bottom-8 inset-x-0 lg:left-0' : ''}
+            `}>
+                <main className={`
+                    ${role === 'official'
+                        ? 'h-full'
+                        : 'min-h-[calc(100dvh-64px)] pt-16 pb-12'}
+                `}>
                     {children}
                 </main>
             </div>

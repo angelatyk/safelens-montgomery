@@ -68,7 +68,7 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect, refreshTr
     }, [narratives]);
 
     return (
-        <div className="flex flex-col h-full bg-[var(--color-bg-surface)]">
+        <div className="flex flex-col bg-[var(--color-bg-surface)]" style={{ height: 'calc(100dvh - 96px)' }}>
             <div className="p-4 border-b border-[var(--color-border-default)]">
                 <h2 className="text-lg font-bold flex items-center gap-2 text-[var(--color-text-primary)]">
                     Narrative Queue
@@ -78,7 +78,7 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect, refreshTr
                 </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {isLoading ? (
                     <div className="flex justify-center py-12">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />

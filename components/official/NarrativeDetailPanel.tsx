@@ -298,7 +298,7 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
     const severityColor = severityScore > 8 ? "text-red-400" : severityScore > 4 ? "text-orange-400" : "text-blue-400";
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-[var(--color-bg-surface)]">
+        <div className="flex flex-col overflow-hidden bg-[var(--color-bg-surface)]" style={{ height: 'calc(100dvh - 96px)' }}>
             {/* Sticky Header — always visible while scrolling */}
             <div className="border-b border-[var(--color-border-default)] bg-purple-500/5 px-6 pt-5 pb-4 shrink-0">
                 <div className="flex items-start justify-between gap-4">
@@ -335,7 +335,7 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
 
                 {/* Content Section — AI Narrative (no title, it's in the header) */}
                 <section className="space-y-2">

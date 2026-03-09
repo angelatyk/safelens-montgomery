@@ -35,7 +35,7 @@ export default function OfficialOpsPage() {
     };
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-[var(--color-bg-canvas)] lg:flex-row relative">
+        <div className="flex h-full flex-col bg-[var(--color-bg-canvas)] lg:flex-row relative">
 
             {/* Global Toast Notification */}
             {toast && (
@@ -53,7 +53,10 @@ export default function OfficialOpsPage() {
             )}
 
             {/* Left Column: Queue */}
-            <div className="flex w-full flex-col border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]/50 lg:w-96 xl:w-[420px]">
+            <div className={`
+                flex w-full flex-col border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]/50 lg:w-96 xl:w-[420px]
+                ${selectedNarrativeId ? 'hidden lg:flex' : 'flex'}
+            `}>
                 {/* Tab bar — kept for future tabs */}
                 <div className="flex border-b border-[var(--color-border-default)]">
                     <button
@@ -63,7 +66,7 @@ export default function OfficialOpsPage() {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-hidden">
                     <OfficialNarrativeQueue
                         selectedId={selectedNarrativeId}
                         onSelect={setSelectedNarrativeId}
@@ -73,7 +76,10 @@ export default function OfficialOpsPage() {
             </div>
 
             {/* Right Column: AI Detail & Response Panel */}
-            <div className="flex flex-1 flex-col bg-[var(--color-bg-surface)]/80 backdrop-blur-sm">
+            <div className={`
+                flex flex-1 flex-col bg-[var(--color-bg-surface)]/80 backdrop-blur-sm
+                ${selectedNarrativeId ? 'flex' : 'hidden lg:flex'}
+            `}>
                 <NarrativeDetailPanel
                     narrativeId={selectedNarrativeId}
                     onUpdate={(msg: string) => handleRefresh(msg)}
