@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@/lib/hooks/useUser";
 import IncidentCard from "./IncidentCard";
 
 const ACTIVE_PAGE_SIZE = 5;
