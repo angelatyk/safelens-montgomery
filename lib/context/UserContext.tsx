@@ -71,7 +71,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     const meta = data.session.user.user_metadata;
                     setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
                     setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
-                    await fetchProfile(data.session.user);
+                    fetchProfile(data.session.user).catch(e => console.warn('[UserContext] fetchProfile async aborted', e));
                 }
             } catch (e) {
                 console.warn('[UserContext] Session fetch aborted', e);
@@ -100,7 +100,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                         const meta = session.user.user_metadata;
                         setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
                         setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
-                        await fetchProfile(session.user);
+                        fetchProfile(session.user).catch(e => console.warn('[UserContext] fetchProfile async aborted', e));
                     } catch (e) {
                         console.warn('[UserContext] fetchProfile aborted', e);
                     }
