@@ -1,4 +1,4 @@
-import AlertBox from "@/components/dashboard/AlertBox";
+// import AlertBox from "@/components/dashboard/AlertBox";
 import IncidentFeed from "@/components/dashboard/IncidentFeed";
 import LocalNewsFeed from "@/components/dashboard/LocalNewsFeed";
 import AISafetyInsights from "@/components/dashboard/AISafetyInsights";
@@ -10,7 +10,7 @@ export default function HomePage() {
 
                 {/* Main Feed Column (Alerts + Incidents) */}
                 <div className="flex flex-col gap-8 lg:col-span-8">
-                    <AlertBox />
+                    {/* <AlertBox /> */}
                     <IncidentFeed />
                 </div>
 
