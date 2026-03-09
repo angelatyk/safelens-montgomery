@@ -60,13 +60,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         async function getInitialSession() {
             try {
+                console.log("[UserContext] getInitialSession starting...");
                 const { data } = await supabase.auth.getSession();
+                console.log("[UserContext] getInitialSession fetched:", data.session ? "Active Session Found" : "No Session");
                 if (!mounted) return;
                 setUser(data.session?.user ?? null);
-                if (data.session?.user) await fetchProfile(data.session.user);
+                if (data.session?.user) {
+                    console.log("[UserContext] getInitialSession routing to fetchProfile...");
+                    await fetchProfile(data.session.user);
+                }
             } catch (e) {
-                console.warn('Session fetch aborted', e);
+                console.warn('[UserContext] Session fetch aborted', e);
             } finally {
+                console.log("[UserContext] getInitialSession setting isLoading to false.");
                 if (mounted) setIsLoading(false);
             }
         }
@@ -75,20 +81,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event: string, session: any) => {
+                console.log(`[UserContext] onAuthStateChange fired with event: ${_event}`);
                 if (!mounted) return;
-                if (_event === "INITIAL_SESSION") return; // already handled above
+                if (_event === "INITIAL_SESSION") {
+                    console.log("[UserContext] onAuthStateChange skipping INITIAL_SESSION");
+                    return; // already handled above
+                }
+                console.log("[UserContext] onAuthStateChange setting user:", session?.user ? "User Found" : "No User");
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     try {
+                        console.log("[UserContext] onAuthStateChange routing to fetchProfile...");
                         await fetchProfile(session.user);
                     } catch (e) {
-                        console.warn('fetchProfile aborted', e);
+                        console.warn('[UserContext] fetchProfile aborted', e);
                     }
                 } else {
+                    console.log("[UserContext] onAuthStateChange clearing profile.");
                     setRole(null);
                     setDisplayName(null);
                     setAvatarUrl(null);
                 }
+                console.log("[UserContext] onAuthStateChange setting isLoading to false.");
                 if (mounted) setIsLoading(false);
             }
         );
