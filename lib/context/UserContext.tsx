@@ -60,13 +60,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         async function getInitialSession() {
             try {
-                console.log("[UserContext] getInitialSession starting...");
                 const { data } = await supabase.auth.getSession();
-                console.log("[UserContext] getInitialSession fetched:", data.session ? "Active Session Found" : "No Session");
                 if (!mounted) return;
                 setUser(data.session?.user ?? null);
                 if (data.session?.user) {
-                    console.log("[UserContext] getInitialSession routing to fetchProfile...");
                     setRole("resident"); // default to resident immediately to unblock UI
                     const meta = data.session.user.user_metadata;
                     setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
@@ -76,7 +73,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
             } catch (e) {
                 console.warn('[UserContext] Session fetch aborted', e);
             } finally {
-                console.log("[UserContext] getInitialSession setting isLoading to false.");
                 if (mounted) setIsLoading(false);
             }
         }
@@ -85,17 +81,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event: string, session: any) => {
-                console.log(`[UserContext] onAuthStateChange fired with event: ${_event}`);
                 if (!mounted) return;
                 if (_event === "INITIAL_SESSION") {
-                    console.log("[UserContext] onAuthStateChange skipping INITIAL_SESSION");
                     return; // already handled above
                 }
-                console.log("[UserContext] onAuthStateChange setting user:", session?.user ? "User Found" : "No User");
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     try {
-                        console.log("[UserContext] onAuthStateChange routing to fetchProfile...");
                         setRole("resident"); // default to resident immediately to unblock UI
                         const meta = session.user.user_metadata;
                         setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
@@ -105,12 +97,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                         console.warn('[UserContext] fetchProfile aborted', e);
                     }
                 } else {
-                    console.log("[UserContext] onAuthStateChange clearing profile.");
                     setRole(null);
                     setDisplayName(null);
                     setAvatarUrl(null);
                 }
-                console.log("[UserContext] onAuthStateChange setting isLoading to false.");
                 if (mounted) setIsLoading(false);
             }
         );
