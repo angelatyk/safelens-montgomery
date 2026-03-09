@@ -17,8 +17,10 @@ import {
     FlagIcon,
     ArchiveBoxIcon,
     ClockIcon,
-    XMarkIcon
+    XMarkIcon,
+    UserCircleIcon
 } from "@heroicons/react/24/outline";
+import { useUser } from "@/lib/hooks/useUser";
 
 interface NarrativeDetail {
     id: string;
@@ -39,7 +41,8 @@ interface Comment {
     content: string;
     created_at: string;
     is_official: boolean;
-    user_id: string;
+    user_id?: string;
+    display_name?: string | null;
 }
 
 interface FeedbackStats {
@@ -53,6 +56,15 @@ interface FeedbackStats {
     }
 }
 
+interface PublicUpdate {
+    id: string;
+    content: string;
+    created_at: string;
+    user_id?: string;
+    display_name?: string | null;
+}
+
+
 interface Props {
     narrativeId: string | null;
     onUpdate?: (message: string) => void;
@@ -60,8 +72,10 @@ interface Props {
 }
 
 export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }: Props) {
+    const { user } = useUser();
     const [narrative, setNarrative] = useState<NarrativeDetail | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
+    const [publicUpdates, setPublicUpdates] = useState<PublicUpdate[]>([]);
     const [newOfficialNote, setNewOfficialNote] = useState("");
     const [officialUpdate, setOfficialUpdate] = useState("");
     const [pendingStatus, setPendingStatus] = useState("");
@@ -78,6 +92,18 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
             }
         } catch (err) {
             console.error("Failed to fetch comments", err);
+        }
+    };
+
+    const fetchPublicUpdates = async (id: string) => {
+        try {
+            const res = await fetch(`/api/narratives/${id}/public-updates`);
+            if (res.ok) {
+                const data = await res.json();
+                setPublicUpdates(data.updates || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch public updates", err);
         }
     };
 
@@ -103,12 +129,14 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                 const found = data.narratives.find((n: NarrativeDetail) => n.id === id);
                 if (found) {
                     setNarrative(found);
-                    setOfficialUpdate(found.official_update || "");
-                    setNewOfficialNote(found.official_notes || "");
+                    // Always start with empty inputs for the threaded feeds
+                    setOfficialUpdate("");
+                    setNewOfficialNote("");
                     setPendingStatus(found.official_status || "unreviewed");
                 }
             }
             fetchComments(id);
+            fetchPublicUpdates(id);
             fetchFeedback(id);
         } catch (err) {
             console.error("Failed to fetch narrative detail", err);
@@ -130,22 +158,56 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
         setIsUpdating(true);
         const statusToSubmit = overrideStatus || pendingStatus;
         try {
-            const res = await fetch(`/api/narratives/${narrative.id}/verify`, {
+            // 1. Update Status (always)
+            const verifyRes = await fetch(`/api/narratives/${narrative.id}/verify`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    officialStatus: statusToSubmit,
-                    officialUpdate: officialUpdate,
-                    officialNotes: newOfficialNote
+                    officialStatus: statusToSubmit
                 })
             });
-            if (res.ok) {
+
+            // 2. Submit Public Update (if text exists)
+            let updateOk = true;
+            if (officialUpdate.trim()) {
+                const pubRes = await fetch(`/api/narratives/${narrative.id}/public-updates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: officialUpdate,
+                        userId: user?.id
+                    })
+                });
+                updateOk = pubRes.ok;
+            }
+
+            // 3. Submit Internal Comment (if text exists)
+            let commentOk = true;
+            if (newOfficialNote.trim()) {
+                const commRes = await fetch(`/api/narratives/${narrative.id}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: newOfficialNote,
+                        isOfficial: true,
+                        userId: user?.id
+                    })
+                });
+                commentOk = commRes.ok;
+            }
+
+            if (verifyRes.ok && updateOk && commentOk) {
                 setNarrative(prev => prev ? {
                     ...prev,
-                    official_status: statusToSubmit,
-                    official_update: officialUpdate,
-                    official_notes: newOfficialNote
+                    official_status: statusToSubmit
                 } : null);
+
+                // Clear inputs and refresh threads
+                setOfficialUpdate("");
+                setNewOfficialNote("");
+                fetchComments(narrative.id);
+                fetchPublicUpdates(narrative.id);
+
                 if (overrideStatus) setPendingStatus(overrideStatus);
                 if (onUpdate) {
                     onUpdate(overrideStatus === 'resolved' ? "Narrative Resolved" : "Record Updated");
@@ -186,14 +248,26 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
 
     return (
         <div className="flex h-full flex-col overflow-hidden bg-[var(--color-bg-surface)]">
-            {/* Header */}
-            <div className="border-b border-[var(--color-border-default)] bg-purple-500/5 p-6 shrink-0">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-purple-400">
-                        <SparklesIcon className="h-5 w-5" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">AI Situational Summary</span>
+            {/* Sticky Header — always visible while scrolling */}
+            <div className="border-b border-[var(--color-border-default)] bg-purple-500/5 px-6 pt-5 pb-4 shrink-0">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-purple-400 mb-1">
+                            <SparklesIcon className="h-4 w-4 shrink-0" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">AI Situational Summary</span>
+                        </div>
+                        <h2 className="text-base font-bold text-white leading-tight truncate">
+                            {narrative.title || "Safety Intelligence Summary"}
+                        </h2>
+                        <div className="flex items-center gap-4 text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                            <span className="flex items-center gap-1">
+                                <MapPinIcon className="h-3 w-3" />
+                                {narrative.neighborhoods?.name || "Global"}
+                            </span>
+                            <span className="font-mono">ID: {narrative.id.slice(0, 8)}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
                             {narrative.official_status || 'unreviewed'}
                         </span>
@@ -208,24 +282,12 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-[10px] text-[var(--color-text-tertiary)]">
-                    <span className="flex items-center gap-1">
-                        <MapPinIcon className="h-3 w-3" />
-                        {narrative.neighborhoods?.name || "Global"}
-                    </span>
-                    <span className="font-mono">
-                        ID: {narrative.id.slice(0, 8)}
-                    </span>
-                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
 
-                {/* Content Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xl font-bold text-white leading-tight">
-                        {narrative.title || "Safety Intelligence Summary"}
-                    </h2>
+                {/* Content Section — AI Narrative (no title, it's in the header) */}
+                <section className="space-y-2">
                     <p className="text-sm leading-relaxed text-[var(--color-navy-100)]">
                         {narrative.content}
                     </p>
@@ -275,52 +337,98 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                 </section>
 
                 {/* Resident Comments */}
-                {comments.filter(c => !c.is_official).length > 0 && (
-                    <section className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-tight">Resident Comments</h3>
+                <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-tight">Resident Comments</h3>
+                        {comments.filter(c => !c.is_official).length > 0 && (
                             <span className="text-[10px] text-[var(--color-text-tertiary)]">{comments.filter(c => !c.is_official).length} Public</span>
-                        </div>
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {comments.filter(c => !c.is_official).map((comment) => (
-                                <div key={comment.id} className="p-3 rounded-[var(--radius-sm)] bg-white/5 border border-white/5 space-y-1">
-                                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
-                                    <div className="flex justify-between items-center text-[9px] text-[var(--color-text-tertiary)]">
-                                        <span>UserID: {comment.user_id?.slice(0, 8)}...</span>
-                                        <span>{new Date(comment.created_at).toLocaleDateString()}</span>
+                        )}
+                    </div>
+                    <div className="space-y-0 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-black/10 rounded-[var(--radius-sm)] border border-white/5">
+                        {comments.filter(c => !c.is_official).length === 0 ? (
+                            <p className="text-[10px] italic text-[var(--color-text-tertiary)] text-center py-4">No resident comments yet.</p>
+                        ) : (
+                            comments.filter(c => !c.is_official).map((comment) => (
+                                <div key={comment.id} className="p-3 border-b border-white/5 last:border-0 space-y-1">
+                                    <div className="flex justify-between items-center text-[9px]">
+                                        <span className="font-bold text-[var(--color-text-secondary)]">{comment.display_name || `Resident ${comment.user_id?.slice(0, 5) || 'Unknown'}`}</span>
+                                        <span className="text-[var(--color-text-tertiary)]">{new Date(comment.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                                     </div>
+                                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
                                 </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
+                            ))
+                        )}
+                    </div>
+                </section>
 
                 {/* Official Interaction Form Area */}
                 <div className="space-y-6 pt-6 border-t border-white/5">
 
-                    {/* Public Update */}
-                    <section className="space-y-3">
+                    {/* Public Update Section */}
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xs font-bold text-blue-300 uppercase tracking-tight">Public Update Note</h3>
                             <span className="text-[9px] text-[var(--color-text-tertiary)]">Visible to Residents</span>
                         </div>
+
                         <textarea
                             value={officialUpdate}
                             onChange={(e) => setOfficialUpdate(e.target.value)}
-                            placeholder="Write a status update for the public feed..."
-                            className="w-full h-20 rounded-[var(--radius-sm)] bg-white/5 border border-white/10 p-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-medium"
+                            placeholder="Write a new status update for the public feed..."
+                            className="w-full h-16 rounded-[var(--radius-sm)] bg-white/5 border border-white/10 p-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-medium"
                         />
+
+                        {/* Public History */}
+                        <div className="space-y-0 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-blue-500/5 rounded-[var(--radius-sm)] border border-blue-500/10">
+                            {publicUpdates.length === 0 ? (
+                                <p className="text-[10px] italic text-blue-300/40 text-center py-4">No past public updates yet.</p>
+                            ) : (
+                                publicUpdates.map((update) => (
+                                    <div key={update.id} className="p-3 border-b border-blue-500/10 last:border-0 space-y-2">
+                                        <div className="flex justify-between items-center text-[9px]">
+                                            <div className="flex items-center gap-1.5 font-bold text-blue-300">
+                                                <UserCircleIcon className="h-3 w-3" />
+                                                <span>{update.display_name || "Unknown Official"}</span>
+                                            </div>
+                                            <span className="text-blue-300/40">{new Date(update.content ? update.created_at : Date.now()).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                        </div>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">{update.content}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </section>
 
-                    {/* Official Comments */}
-                    <section className="space-y-3">
-                        <h3 className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-tight">Official Comments (Internal)</h3>
+                    {/* Internal Comments Thread */}
+                    <section className="space-y-4">
+                        <h3 className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-tight">Internal Comments</h3>
+
                         <textarea
                             value={newOfficialNote}
                             onChange={(e) => setNewOfficialNote(e.target.value)}
-                            placeholder="Internal coordination notes..."
-                            className="w-full h-24 rounded-[var(--radius-sm)] bg-black/20 border border-white/5 p-3 text-xs text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-white/20"
+                            placeholder="Add an internal coordination note..."
+                            className="w-full h-20 rounded-[var(--radius-sm)] bg-black/20 border border-white/5 p-3 text-xs text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-white/20"
                         />
+
+                        {/* Internal History */}
+                        <div className="space-y-0 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-black/10 rounded-[var(--radius-sm)] border border-white/5">
+                            {comments.filter(c => c.is_official).length === 0 ? (
+                                <p className="text-[10px] italic text-[var(--color-text-tertiary)] text-center py-4">No internal notes yet.</p>
+                            ) : (
+                                comments.filter(c => c.is_official).map((comment) => (
+                                    <div key={comment.id} className="p-3 border-b border-white/5 last:border-0 space-y-2">
+                                        <div className="flex justify-between items-center text-[9px]">
+                                            <div className="flex items-center gap-1.5 font-bold text-indigo-300">
+                                                <UserCircleIcon className="h-3 w-3" />
+                                                <span>{comment.display_name || "Unknown Official"}</span>
+                                            </div>
+                                            <span className="text-[var(--color-text-tertiary)]">{new Date(comment.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                        </div>
+                                        <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </section>
 
                     {/* Action Buttons */}
@@ -360,39 +468,44 @@ export default function NarrativeDetailPanel({ narrativeId, onUpdate, onClose }:
                                 </button>
                             </div>
                         </div>
-
-                        <div className="space-y-3 pt-6 border-t border-white/5">
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={() => handleUpdateRecord()}
-                                    disabled={isUpdating}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-[var(--radius-sm)] bg-white text-black text-[12px] font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-xl disabled:opacity-50 cursor-pointer"
-                                >
-                                    {isUpdating ? "Updating..." : "Update"}
-                                </button>
-
-                                <button
-                                    onClick={() => handleUpdateRecord('resolved')}
-                                    disabled={isUpdating}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-[var(--radius-sm)] bg-green-600 border border-green-500 text-[11px] font-black text-white uppercase tracking-[0.15em] hover:bg-green-500 transition-all cursor-pointer"
-                                >
-                                    <ArchiveBoxIcon className="h-4 w-4" />
-                                    {isUpdating ? "Resolving..." : "Mark as Resolved"}
-                                </button>
-                            </div>
-                        </div>
                     </section>
                 </div>
             </div>
 
-            {/* Footer */}
-            <div className="border-t border-[var(--color-border-default)] p-4 bg-black/20 shrink-0">
-                <div className="flex items-center justify-between text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-tight">
-                    <span className="flex items-center gap-2">
-                        <ChatBubbleLeftRightIcon className="h-3 w-3" />
-                        {comments.length} Resident Comments
+            {/* Fixed Action Bar — always visible above footer */}
+            <div className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-6 py-3 flex gap-3 shrink-0">
+                <button
+                    onClick={() => handleUpdateRecord()}
+                    disabled={isUpdating}
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold py-2.5 rounded-[var(--radius-sm)] shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                >
+                    {isUpdating ? "Syncing..." : "Update Narrative"}
+                </button>
+                <button
+                    onClick={() => handleUpdateRecord('resolved')}
+                    disabled={isUpdating}
+                    className="flex-1 bg-green-600/20 hover:bg-green-600/30 text-green-400 text-xs font-bold py-2.5 rounded-[var(--radius-sm)] border border-green-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                    Mark as Resolved
+                </button>
+            </div>
+
+            <div className="border-t border-[var(--color-border-default)] bg-black/20 px-6 py-2 shrink-0">
+                <div className="flex items-center justify-around text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5">
+                        <span className="font-bold text-white">{comments.filter(c => !c.is_official).length}</span>
+                        Resident Comments
                     </span>
-                    <span>Last Update: {new Date(narrative.generated_at).toLocaleTimeString()}</span>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="flex items-center gap-1.5">
+                        <span className="font-bold text-blue-300">{publicUpdates.length}</span>
+                        Public Updates
+                    </span>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="flex items-center gap-1.5">
+                        <span className="font-bold text-indigo-300">{comments.filter(c => c.is_official).length}</span>
+                        Internal Comments
+                    </span>
                 </div>
             </div>
         </div>
