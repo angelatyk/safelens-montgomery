@@ -153,14 +153,6 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect, refreshTr
                 )}
             </div>
 
-            <div className="border-t border-[var(--color-border-default)] p-3 bg-[var(--color-bg-canvas)]/50">
-                <button
-                    onClick={fetchNarratives}
-                    className="w-full text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] hover:text-[var(--color-brand-default)] transition-colors py-1 cursor-pointer"
-                >
-                    Refresh Queue
-                </button>
-            </div>
         </div>
     );
 }
