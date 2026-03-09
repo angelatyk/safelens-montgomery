@@ -95,7 +95,15 @@ export default function IncidentCard({
                         {title}
                     </h3>
                     <div className="flex items-center gap-2">
-                        {officialStatus && officialStatus !== 'unreviewed' && officialStatus !== 'verified' && (
+                        {status === 'resolved' && (
+                            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[var(--radius-sm)] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm animate-in fade-in zoom-in duration-500">
+                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    Resolved
+                                </span>
+                            </div>
+                        )}
+                        {officialStatus && officialStatus !== 'unreviewed' && officialStatus !== 'verified' && officialStatus !== 'resolved' && (
                             <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${officialStatus === 'resolved'
                                 ? 'bg-green-500/10 text-green-500 border-green-500/20'
                                 : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
@@ -164,7 +172,7 @@ export default function IncidentCard({
                     </div>
                 )}
 
-                {(hasVoted || status === 'resolved') && (
+                {(hasVoted && status !== 'resolved') && (
                     <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-tertiary)] italic">
                         <CheckCircleIcon className="h-3 w-3 text-[var(--color-success)]" />
                         {voteTally} people confirm this is ongoing
@@ -181,7 +189,7 @@ export default function IncidentCard({
                     )}
                     <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
                         <ClockIcon className="h-3.5 w-3.5" />
-                        {time}
+                        Generated {time}
                     </div>
                     {department && (
                         <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">

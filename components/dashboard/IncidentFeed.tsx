@@ -134,9 +134,6 @@ export default function IncidentFeed() {
                         <h2 className="text-xl font-bold text-[var(--color-text-secondary)]">
                             Past Incidents
                         </h2>
-                        <span className="text-xs text-[var(--color-text-tertiary)]">
-                            Resolved
-                        </span>
                     </div>
 
                     <div className="grid gap-4 opacity-80">
