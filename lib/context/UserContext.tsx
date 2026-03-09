@@ -67,6 +67,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 setUser(data.session?.user ?? null);
                 if (data.session?.user) {
                     console.log("[UserContext] getInitialSession routing to fetchProfile...");
+                    setRole("resident"); // default to resident immediately to unblock UI
+                    const meta = data.session.user.user_metadata;
+                    setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
+                    setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
                     await fetchProfile(data.session.user);
                 }
             } catch (e) {
@@ -92,6 +96,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 if (session?.user) {
                     try {
                         console.log("[UserContext] onAuthStateChange routing to fetchProfile...");
+                        setRole("resident"); // default to resident immediately to unblock UI
+                        const meta = session.user.user_metadata;
+                        setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
+                        setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
                         await fetchProfile(session.user);
                     } catch (e) {
                         console.warn('[UserContext] fetchProfile aborted', e);
