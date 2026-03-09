@@ -59,15 +59,15 @@ export default function DashboardLayout({
 
             {/* Main Content Area - Shifted for Sidebar on Desktop */}
             <div className="transition-all duration-[var(--duration-normal)] lg:pl-64">
-                <main className="min-h-[calc(100vh-64px)] pt-16">
+                <main className="min-h-[calc(100vh-64px)] pt-16 pb-12">
                     {children}
                 </main>
             </div>
 
             {/* Global Status Footer */}
-            <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]/30 py-4 lg:pl-64">
+            <footer className="fixed bottom-0 left-0 right-0 z-[var(--z-navbar)] border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]/80 backdrop-blur-md py-2 lg:pl-64">
                 <div className="mx-auto max-w-screen-2xl px-4 text-center sm:px-6 lg:px-8">
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
+                    <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-[0.2em] font-medium">
                         Project SafeLens • Build 0.1.0 Alpha • Montgomery, AL
                     </p>
                 </div>
