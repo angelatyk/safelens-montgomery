@@ -21,7 +21,7 @@ import {
     UserCircleIcon,
     ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/lib/context/UserContext";
 
 interface NarrativeDetail {
     id: string;

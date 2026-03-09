@@ -1,23 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
 
-interface UseUserResult {
-    /** The currently authenticated user, or null if not signed in. */
+interface UserContextValue {
     user: User | null;
-    /** The user's role from the database ('resident', 'official', 'admin'). */
     role: string | null;
-    /** The user's display name, if set. */
     displayName: string | null;
-    /** The user's avatar URL, if set. */
     avatarUrl: string | null;
-    /** True while the initial auth state and profile are being resolved. */
     isLoading: boolean;
 }
 
-export function useUser(): UseUserResult {
+const UserContext = createContext<UserContextValue>({
+    user: null,
+    role: null,
+    displayName: null,
+    avatarUrl: null,
+    isLoading: true,
+});
+
+export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [displayName, setDisplayName] = useState<string | null>(null);
@@ -25,22 +28,20 @@ export function useUser(): UseUserResult {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchProfile = async (sessionUser: User) => {
-        // Immediately set name/avatar from session metadata (always available)
+        // Immediately set from session metadata (always available, no network needed)
         const meta = sessionUser.user_metadata;
         setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
         setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
         setRole("resident"); // default while DB loads
 
-        // Then try DB for role + any overrides
+        // Then override with DB values for role + any custom display name
         const { data, error } = await supabase
             .from("users")
             .select("role, display_name, avatar_url")
             .eq("id", sessionUser.id)
             .single();
 
-        if (error) {
-            console.error("fetchProfile DB error:", error);
-        }
+        if (error) console.error("fetchProfile DB error:", error);
 
         if (data) {
             setRole(data.role ?? "resident");
@@ -55,11 +56,8 @@ export function useUser(): UseUserResult {
         async function getInitialSession() {
             const { data } = await supabase.auth.getSession();
             if (!mounted) return;
-
             setUser(data.session?.user ?? null);
-            if (data.session?.user) {
-                await fetchProfile(data.session.user);
-            }
+            if (data.session?.user) await fetchProfile(data.session.user);
             if (mounted) setIsLoading(false);
         }
 
@@ -68,10 +66,7 @@ export function useUser(): UseUserResult {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
                 if (!mounted) return;
-
-                // Avoid double fetch if Supabase fires INITIAL_SESSION concurrently
-                if (_event === 'INITIAL_SESSION') return;
-
+                if (_event === "INITIAL_SESSION") return; // already handled above
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     await fetchProfile(session.user);
@@ -90,5 +85,13 @@ export function useUser(): UseUserResult {
         };
     }, []);
 
-    return { user, role, displayName, avatarUrl, isLoading };
+    return (
+        <UserContext.Provider value={{ user, role, displayName, avatarUrl, isLoading }}>
+            {children}
+        </UserContext.Provider>
+    );
+}
+
+export function useUser() {
+    return useContext(UserContext);
 }

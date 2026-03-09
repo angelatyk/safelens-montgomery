@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/lib/context/UserContext";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ReportIncidentModal from "@/components/dashboard/ReportIncidentModal";
 
