@@ -62,9 +62,9 @@ export async function POST() {
                 for (const article of matchingArticles || []) {
                     const headline = article.headline.toLowerCase();
                     // Extract key words (3+ chars) from the headline
-                    const words = headline.split(/\s+/).filter(w => w.length >= 4);
+                    const words = headline.split(/\s+/).filter((w: string) => w.length >= 4);
                     // Count how many headline words appear in the narrative content
-                    const matchCount = words.filter(w => content.includes(w) || title.includes(w)).length;
+                    const matchCount = words.filter((w: string) => content.includes(w) || title.includes(w)).length;
                     const score = words.length > 0 ? matchCount / words.length : 0;
 
                     if (score > bestScore && score >= 0.5) {
