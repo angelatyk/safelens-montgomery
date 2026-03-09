@@ -109,10 +109,10 @@ export default function LocalNewsFeed() {
                 )}
             </div>
 
-            <div className="mt-2 rounded-[var(--radius-sm)] border border-[var(--color-ai-border)] bg-[var(--color-ai-bg)] p-3">
+            <div className="mt-2 rounded-[var(--radius-sm)] border border-[var(--color-ai-border)] bg-[var(--color-ai-bg)] p-3 flex items-start gap-2">
+                <SparklesIcon className="shrink-0 h-3.5 w-3.5 mt-0.5 text-[var(--color-ai)]" />
                 <p className="text-[11px] leading-relaxed text-[var(--color-navy-200)]">
-                    <SparklesIcon className="inline h-3.5 w-3.5 mr-1 text-[var(--color-ai)]" />
-                    <span className="font-bold text-[var(--color-ai)]">AI Filtered:</span> Showing only verified public safety news from local Montgomery sources. Non-safety content is automatically excluded.
+                    <span className="font-bold text-[var(--color-ai)]">AI Filtered:</span> Showing only Public Safety News from local Montgomery sources. Non-safety content is automatically excluded.
                 </p>
             </div>
         </aside>
