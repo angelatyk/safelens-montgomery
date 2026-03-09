@@ -35,7 +35,7 @@ export default function OfficialOpsPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden bg-[var(--color-bg-canvas)] lg:flex-row relative">
+        <div className="flex h-full flex-col overflow-hidden bg-[var(--color-bg-canvas)] lg:flex-row relative">
 
             {/* Global Toast Notification */}
             {toast && (
