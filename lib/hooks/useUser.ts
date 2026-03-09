@@ -17,17 +17,6 @@ interface UseUserResult {
     isLoading: boolean;
 }
 
-/**
- * Subscribes to the Supabase auth state and returns the current user and profile.
- *
- * Centralizes the repetitive pattern of calling `auth.getUser()` +
- * `auth.onAuthStateChange` that was previously duplicated across several
- * components. All consumers share the same underlying singleton client,
- * so there is only ever one active subscription per page.
- *
- * Usage:
- *   const { user, role, isLoading } = useUser();
- */
 export function useUser(): UseUserResult {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<string | null>(null);
@@ -35,50 +24,70 @@ export function useUser(): UseUserResult {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchProfile = async (userId: string) => {
-        const { data } = await supabase
+    const fetchProfile = async (sessionUser: User) => {
+        // Immediately set name/avatar from session metadata (always available)
+        const meta = sessionUser.user_metadata;
+        setDisplayName(meta?.full_name ?? meta?.name ?? meta?.display_name ?? null);
+        setAvatarUrl(meta?.avatar_url ?? meta?.picture ?? null);
+        setRole("resident"); // default while DB loads
+
+        // Then try DB for role + any overrides
+        const { data, error } = await supabase
             .from("users")
             .select("role, display_name, avatar_url")
-            .eq("id", userId)
+            .eq("id", sessionUser.id)
             .single();
+
+        if (error) {
+            console.error("fetchProfile DB error:", error);
+        }
 
         if (data) {
             setRole(data.role ?? "resident");
-            setDisplayName(data.display_name);
-            setAvatarUrl(data.avatar_url);
-        } else {
-            setRole(null);
-            setDisplayName(null);
-            setAvatarUrl(null);
+            if (data.display_name) setDisplayName(data.display_name);
+            if (data.avatar_url) setAvatarUrl(data.avatar_url);
         }
     };
 
     useEffect(() => {
-        // Resolve the initial session
-        supabase.auth.getUser().then(async ({ data }) => {
-            setUser(data.user);
-            if (data.user) {
-                await fetchProfile(data.user.id);
-            }
-            setIsLoading(false);
-        });
+        let mounted = true;
 
-        // Keep in sync when auth state changes (sign in, sign out, token refresh)
+        async function getInitialSession() {
+            const { data } = await supabase.auth.getSession();
+            if (!mounted) return;
+
+            setUser(data.session?.user ?? null);
+            if (data.session?.user) {
+                await fetchProfile(data.session.user);
+            }
+            if (mounted) setIsLoading(false);
+        }
+
+        getInitialSession();
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
+                if (!mounted) return;
+
+                // Avoid double fetch if Supabase fires INITIAL_SESSION concurrently
+                if (_event === 'INITIAL_SESSION') return;
+
                 setUser(session?.user ?? null);
                 if (session?.user) {
-                    await fetchProfile(session.user.id);
+                    await fetchProfile(session.user);
                 } else {
                     setRole(null);
                     setDisplayName(null);
                     setAvatarUrl(null);
                 }
-                setIsLoading(false);
+                if (mounted) setIsLoading(false);
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     return { user, role, displayName, avatarUrl, isLoading };
