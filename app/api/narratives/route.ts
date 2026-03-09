@@ -8,6 +8,8 @@ export async function GET(request: Request) {
     const offset = parseInt(searchParams.get("offset") ?? "0");
 
     const status = searchParams.get("status");
+    const statusGroup = searchParams.get("status_group"); // 'active' or 'resolved'
+    const sinceHours = searchParams.get("since_hours");
 
     let query = supabaseAdmin
         .from("narratives")
@@ -27,11 +29,24 @@ export async function GET(request: Request) {
             incident_count,
             news_count
         `)
-        .order("generated_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order("generated_at", { ascending: false });
 
     if (neighborhood) query = query.eq("neighborhood_id", neighborhood);
-    if (status) query = query.eq("status", status);
+
+    if (statusGroup === 'active') {
+        query = query.in("status", ['active', 'verified']);
+    } else if (statusGroup === 'resolved') {
+        query = query.eq("status", "resolved");
+    } else if (status) {
+        query = query.eq("status", status);
+    }
+
+    if (sinceHours) {
+        const date = new Date(Date.now() - parseInt(sinceHours) * 60 * 60 * 1000).toISOString();
+        query = query.gte("generated_at", date);
+    }
+
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
 

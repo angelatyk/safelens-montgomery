@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@/lib/hooks/useUser";
 import IncidentCard from "./IncidentCard";
 
-const PAGE_SIZE = 10;
+const ACTIVE_PAGE_SIZE = 5;
 
 type Narrative = {
     id: string;
@@ -30,51 +30,67 @@ function formatTime(occurred_at: string): string {
 }
 
 export default function IncidentFeed() {
-    const [narratives, setNarratives] = useState<Narrative[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [activeNarratives, setActiveNarratives] = useState<Narrative[]>([]);
+    const [resolvedNarratives, setResolvedNarratives] = useState<Narrative[]>([]);
+    const [isLoadingActive, setIsLoadingActive] = useState(true);
+    const [isLoadingResolved, setIsLoadingResolved] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMoreActive, setHasMoreActive] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [offset, setOffset] = useState(0);
+    const [activeOffset, setActiveOffset] = useState(0);
 
-    const fetchNarratives = async (currentOffset: number, append: boolean) => {
+    const fetchActiveNarratives = async (currentOffset: number, append: boolean) => {
         try {
             const res = await fetch(
-                `/api/narratives?limit=${PAGE_SIZE}&offset=${currentOffset}`
+                `/api/narratives?status_group=active&limit=${ACTIVE_PAGE_SIZE}&offset=${currentOffset}`
             );
-            if (!res.ok) throw new Error("Failed to fetch narratives");
+            if (!res.ok) throw new Error("Failed to fetch active narratives");
             const data = await res.json();
 
-            setNarratives((prev) =>
+            setActiveNarratives((prev) =>
                 append ? [...prev, ...data.narratives] : data.narratives
             );
-            setHasMore(data.narratives.length === PAGE_SIZE);
+            setHasMoreActive(data.narratives.length === ACTIVE_PAGE_SIZE);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong");
+            setError(err instanceof Error ? err.message : "Something went wrong fetching active narratives");
+        }
+    };
+
+    const fetchResolvedNarratives = async () => {
+        try {
+            const res = await fetch(
+                `/api/narratives?status_group=resolved&since_hours=48&limit=50`
+            );
+            if (!res.ok) throw new Error("Failed to fetch past narratives");
+            const data = await res.json();
+            setResolvedNarratives(data.narratives);
+        } catch (err) {
+            console.error("Failed to fetch past narratives:", err);
         }
     };
 
     useEffect(() => {
-        setIsLoading(true);
-        fetchNarratives(0, false).finally(() => setIsLoading(false));
+        setIsLoadingActive(true);
+        setIsLoadingResolved(true);
+        Promise.all([
+            fetchActiveNarratives(0, false),
+            fetchResolvedNarratives()
+        ]).finally(() => {
+            setIsLoadingActive(false);
+            setIsLoadingResolved(false);
+        });
     }, []);
 
     useEffect(() => {
-        // Refresh the feed when a new incident is reported via the TopBar modal
-        // Though narratives are AI-generated, we might want to refresh anyway 
-        // if the system triggers a new generation on report.
         const handleIncidentReported = () => {
-            setOffset(0);
-            fetchNarratives(0, false);
+            setActiveOffset(0);
+            fetchActiveNarratives(0, false);
         };
         window.addEventListener('incidentReported', handleIncidentReported);
         return () => window.removeEventListener('incidentReported', handleIncidentReported);
     }, []);
 
-
-
-    const currentNarratives = narratives.filter(n => n.status === 'active' || n.status === 'verified');
-    const pastNarratives = narratives.filter(n => n.status === 'resolved');
+    const isLoading = isLoadingActive || isLoadingMore;
 
     return (
         <section className="flex flex-col gap-12">
@@ -90,7 +106,7 @@ export default function IncidentFeed() {
                 </div>
 
                 <div className="grid gap-4">
-                    {isLoading && (
+                    {isLoadingActive && (
                         <div className="flex items-center justify-center py-12">
                             <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
                         </div>
@@ -100,14 +116,14 @@ export default function IncidentFeed() {
                         <p className="text-center text-sm text-red-500 py-4">{error}</p>
                     )}
 
-                    {!isLoading && currentNarratives.length === 0 && (
+                    {!isLoadingActive && activeNarratives.length === 0 && (
                         <p className="text-center text-sm text-[var(--color-text-tertiary)] py-8">
                             No active incidents at the moment.
                         </p>
                     )}
 
-                    {!isLoading &&
-                        currentNarratives.map((narrative) => (
+                    {!isLoadingActive &&
+                        activeNarratives.map((narrative) => (
                             <IncidentCard
                                 key={narrative.id}
                                 id={narrative.id}
@@ -124,20 +140,44 @@ export default function IncidentFeed() {
                                 latestPublicUpdate={narrative.latest_public_update}
                             />
                         ))}
+
+                    {isLoadingMore && (
+                        <div className="flex items-center justify-center py-4">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand-default)] border-t-transparent" />
+                        </div>
+                    )}
+
+                    {hasMoreActive && !isLoadingMore && !isLoadingActive && (
+                        <button
+                            onClick={async () => {
+                                const nextOffset = activeOffset + ACTIVE_PAGE_SIZE;
+                                setIsLoadingMore(true);
+                                await fetchActiveNarratives(nextOffset, true);
+                                setActiveOffset(nextOffset);
+                                setIsLoadingMore(false);
+                            }}
+                            className="mt-2 w-full cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border-default)] py-3 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]"
+                        >
+                            View More Summaries
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Past Incidents Section */}
-            {pastNarratives.length > 0 && (
+            {!isLoadingResolved && resolvedNarratives.length > 0 && (
                 <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-4">
                         <h2 className="text-xl font-bold text-[var(--color-text-secondary)]">
                             Past Incidents
                         </h2>
+                        <span className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-tertiary)] bg-[var(--color-bg-canvas)] px-2 py-0.5 rounded">
+                            Last 48 Hours
+                        </span>
                     </div>
 
                     <div className="grid gap-4 opacity-80">
-                        {pastNarratives.map((narrative) => (
+                        {resolvedNarratives.map((narrative) => (
                             <IncidentCard
                                 key={narrative.id}
                                 id={narrative.id}
@@ -156,22 +196,7 @@ export default function IncidentFeed() {
                 </div>
             )}
 
-            {hasMore && !isLoadingMore && !isLoading && (
-                <button
-                    onClick={async () => {
-                        const nextOffset = offset + PAGE_SIZE;
-                        setIsLoadingMore(true);
-                        await fetchNarratives(nextOffset, true);
-                        setOffset(nextOffset);
-                        setIsLoadingMore(false);
-                    }}
-                    className="w-full cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border-default)] py-3 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)]"
-                >
-                    View More Summaries
-                </button>
-            )}
-
-            {!hasMore && !isLoading && (
+            {!hasMoreActive && !isLoadingActive && (
                 <p className="text-center text-xs text-[var(--color-text-tertiary)] py-4">
                     All recent safety summaries have been loaded.
                 </p>
