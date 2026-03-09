@@ -38,7 +38,7 @@ export default function OfficialNarrativeQueue({ selectedId, onSelect, refreshTr
     const fetchNarratives = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch("/api/narratives");
+            const res = await fetch("/api/narratives?limit=all");
             if (res.ok) {
                 const data = await res.json();
                 setNarratives(data.narratives);

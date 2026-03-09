@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const neighborhood = searchParams.get("neighborhood");
-    const limit = parseInt(searchParams.get("limit") ?? "10");
+    const limitStr = searchParams.get("limit");
+    const limit = limitStr === "all" ? null : parseInt(limitStr ?? "10");
     const offset = parseInt(searchParams.get("offset") ?? "0");
 
     const status = searchParams.get("status");
@@ -46,7 +47,9 @@ export async function GET(request: Request) {
         query = query.gte("generated_at", date);
     }
 
-    query = query.range(offset, offset + limit - 1);
+    if (limit !== null) {
+        query = query.range(offset, offset + limit - 1);
+    }
 
     const { data, error } = await query;
 

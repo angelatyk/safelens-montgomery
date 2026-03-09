@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
     HomeIcon,
     RssIcon,
@@ -36,8 +37,7 @@ interface SidebarProps {
 
 const RESIDENT_NAV: NavItem[] = [
     { name: "Dashboard", href: "/", icon: HomeIcon },
-    { name: "Active Incidents", href: "#", icon: ExclamationCircleIcon, badge: "24" },
-    { name: "Intelligence Feed", href: "#", icon: RssIcon },
+    { name: "Active Incidents", href: "/#", icon: ExclamationCircleIcon },
 ];
 
 const OFFICIAL_NAV: NavItem[] = [
@@ -56,6 +56,34 @@ export default function Sidebar({
 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const [activeCount, setActiveCount] = useState<number | null>(null);
+
+    const fetchActiveCount = async () => {
+        const { count } = await supabase
+            .from("narratives")
+            .select("*", { count: "exact", head: true })
+            .neq("official_status", "resolved");
+        setActiveCount(count);
+    };
+
+    useEffect(() => {
+        if (role !== "resident") return;
+
+        fetchActiveCount();
+
+        const channel = supabase
+            .channel("sidebar-counts")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "narratives" },
+                () => fetchActiveCount()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [role]);
 
     const navItems = role === "official" ? OFFICIAL_NAV : RESIDENT_NAV;
 
@@ -123,6 +151,8 @@ export default function Sidebar({
                             </p>
                             {navItems.map((item) => {
                                 const isActive = pathname === item.href;
+                                const badgeValue = item.name === "Active Incidents" ? activeCount?.toString() : item.badge;
+
                                 return (
                                     <Link
                                         key={item.name}
@@ -138,9 +168,9 @@ export default function Sidebar({
                                             <item.icon className="h-5 w-5" />
                                             {item.name}
                                         </div>
-                                        {item.badge && (
+                                        {badgeValue && (
                                             <span className="rounded-full bg-[var(--color-brand-default)]/20 px-2 py-0.5 text-[10px] font-bold text-[var(--color-brand-default)] border border-[var(--color-brand-default)]/30">
-                                                {item.badge}
+                                                {badgeValue}
                                             </span>
                                         )}
                                     </Link>
