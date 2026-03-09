@@ -6,12 +6,10 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id: narrativeId } = await params;
-    const { officialStatus, officialUpdate, officialNotes, verifiedBy } = await request.json();
+    const { officialStatus, verifiedBy } = await request.json();
 
     const updateData: any = {
         official_status: officialStatus,
-        official_update: officialUpdate,
-        official_notes: officialNotes,
         verified_by: verifiedBy,
         verified_at: new Date().toISOString()
     };
