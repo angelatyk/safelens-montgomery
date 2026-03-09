@@ -17,6 +17,8 @@ type Narrative = {
     vote_tally?: number;
     title?: string;
     model_used?: string;
+    official_status?: string;
+    latest_public_update?: string | null;
 };
 
 function formatTime(occurred_at: string): string {
@@ -118,6 +120,8 @@ export default function IncidentFeed() {
                                 status={narrative.status}
                                 initialVoteTally={narrative.vote_tally}
                                 modelUsed={narrative.model_used}
+                                officialStatus={narrative.official_status}
+                                latestPublicUpdate={narrative.latest_public_update}
                             />
                         ))}
                 </div>

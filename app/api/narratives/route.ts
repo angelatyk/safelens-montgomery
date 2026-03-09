@@ -45,6 +45,7 @@ export async function GET(request: Request) {
             { count: voteCount },
             { count: incidentCount },
             { count: newsCount },
+            { data: publicUpdate },
         ] = await Promise.all([
             supabaseAdmin
                 .from("narrative_feedback")
@@ -59,6 +60,13 @@ export async function GET(request: Request) {
                 .from("narrative_news_articles")
                 .select("*", { count: "exact", head: true })
                 .eq("narrative_id", n.id),
+            supabaseAdmin
+                .from("narrative_public_updates")
+                .select("content")
+                .eq("narrative_id", n.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
         ]);
 
         return {
@@ -66,6 +74,7 @@ export async function GET(request: Request) {
             vote_tally: voteCount || 0,
             incident_count: incidentCount ?? n.incident_count ?? 0,
             news_count: newsCount ?? n.news_count ?? 0,
+            latest_public_update: publicUpdate?.content ?? null,
         };
     }));
 

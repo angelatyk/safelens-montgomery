@@ -15,6 +15,8 @@ interface IncidentCardProps {
     status?: string;
     initialVoteTally?: number;
     modelUsed?: string;
+    officialStatus?: string;
+    latestPublicUpdate?: string | null;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -37,6 +39,8 @@ export default function IncidentCard({
     status = "active",
     initialVoteTally = 0,
     modelUsed,
+    officialStatus,
+    latestPublicUpdate,
 }: IncidentCardProps) {
     const [hasVoted, setHasVoted] = useState(false);
     const [voteTally, setVoteTally] = useState<number>(initialVoteTally);
@@ -80,7 +84,7 @@ export default function IncidentCard({
         }
     };
 
-    const showFeedback = status !== 'resolved' && !hasVoted;
+    const showFeedback = status !== 'resolved' && !hasVoted && (!officialStatus || officialStatus === 'unreviewed');
 
     return (
         <div className="group relative rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 transition-all hover:bg-[var(--color-bg-subtle)] hover:shadow-lg">
@@ -90,13 +94,23 @@ export default function IncidentCard({
                     <h3 className="text-base font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-default)] transition-colors">
                         {title}
                     </h3>
-                    {(isVerified || reportId || source === 'ai') && (
-                        <VerifiedBadge
-                            id={reportId || id}
-                            table={reportId ? 'resident_reports' : 'narratives'}
-                            initialStatus={isVerified ? (reportId ? 'verified' : 'active') : status}
-                        />
-                    )}
+                    <div className="flex items-center gap-2">
+                        {officialStatus && officialStatus !== 'unreviewed' && officialStatus !== 'verified' && (
+                            <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${officialStatus === 'resolved'
+                                ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                }`}>
+                                {officialStatus}
+                            </div>
+                        )}
+                        {(isVerified || reportId || source === 'ai') && (
+                            <VerifiedBadge
+                                id={reportId || id}
+                                table={reportId ? 'resident_reports' : 'narratives'}
+                                initialStatus={isVerified ? (reportId ? 'verified' : 'active') : status}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* AI Narrative or placeholder */}
@@ -107,6 +121,19 @@ export default function IncidentCard({
                         </span>
                     )}
                 </p>
+
+                {/* Latest Official Update */}
+                {latestPublicUpdate && (
+                    <div className="relative mt-2 py-2 px-3 bg-amber-500/5 border-l-2 border-amber-500 rounded-r-[var(--radius-sm)]">
+                        <div className="flex items-center gap-2 mb-1 opacity-80">
+                            <ShieldCheckIcon className="h-3 w-3 text-amber-500/80" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-amber-500/80">Latest Update from City</span>
+                        </div>
+                        <p className="text-[11px] text-[var(--color-text-primary)] leading-tight italic">
+                            {latestPublicUpdate}
+                        </p>
+                    </div>
+                )}
 
                 {/* Feedback Loop */}
                 {showFeedback && (
