@@ -291,10 +291,26 @@ export async function POST(request: Request) {
                         console.warn(`[generate] Failed to link narrative ${inserted.id} to incident ${incident.id}: ${linkErr.message}`);
                     }
 
+                    // Cross-link: find news articles that contributed to this incident
+                    // (NLP pipeline stores incident IDs in news_articles.matched_incident_ids)
+                    const { data: relatedArticles } = await supabaseAdmin
+                        .from("news_articles")
+                        .select("id")
+                        .contains("matched_incident_ids", [incident.id]);
+
+                    for (const art of relatedArticles || []) {
+                        const { error: artLinkErr } = await supabaseAdmin
+                            .from("narrative_news_articles")
+                            .insert({ narrative_id: inserted.id, news_article_id: art.id });
+                        if (artLinkErr && !artLinkErr.message.includes("duplicate")) {
+                            console.warn(`[generate] Failed to cross-link article ${art.id}: ${artLinkErr.message}`);
+                        }
+                    }
+
                     existingHashes.add(hash);
                     results.push({ source: "incident", title, id: inserted.id });
                     processed++;
-                    console.log(`[generate] Created narrative: ${title}`);
+                    console.log(`[generate] Created narrative: ${title} (linked ${relatedArticles?.length ?? 0} articles)`);
                 }
             } catch (err: any) {
                 const msg = `Error for incident ${incident.id}: ${err?.message || err}`;
@@ -306,7 +322,7 @@ export async function POST(request: Request) {
         // ── Source 2: News Articles (safety-relevant only) ───────────
         const { data: articles } = await supabaseAdmin
             .from("news_articles")
-            .select("id, headline, source, published_at, relevance_score")
+            .select("id, headline, source, published_at, relevance_score, matched_incident_ids")
             .gte("relevance_score", 0.3)
             .order("published_at", { ascending: false })
             .limit(50);
@@ -347,10 +363,22 @@ export async function POST(request: Request) {
                         console.warn(`[generate] Failed to link narrative ${inserted.id} to article ${article.id}: ${linkErr.message}`);
                     }
 
+                    // Cross-link: if this article was matched to incidents by NLP pipeline,
+                    // link those incidents to the narrative too
+                    const matchedIds = (article as any).matched_incident_ids as string[] | null;
+                    for (const incId of matchedIds || []) {
+                        const { error: incLinkErr } = await supabaseAdmin
+                            .from("narrative_incidents")
+                            .insert({ narrative_id: inserted.id, incident_id: incId });
+                        if (incLinkErr && !incLinkErr.message.includes("duplicate")) {
+                            console.warn(`[generate] Failed to cross-link incident ${incId}: ${incLinkErr.message}`);
+                        }
+                    }
+
                     existingHashes.add(hash);
                     results.push({ source: "news", title, id: inserted.id });
                     processed++;
-                    console.log(`[generate] Created narrative: ${title}`);
+                    console.log(`[generate] Created narrative: ${title} (linked ${matchedIds?.length ?? 0} incidents)`);
                 }
             } catch (err: any) {
                 const msg = `Error for article ${article.id}: ${err?.message || err}`;
