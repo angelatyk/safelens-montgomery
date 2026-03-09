@@ -55,8 +55,13 @@ export default function IncidentCard({
         const lastVote = localStorage.getItem(`feedback_${id}`);
         if (lastVote) {
             const timestamp = parseInt(lastVote);
-            if (Date.now() - timestamp < 15 * 60 * 1000) {
+            const elapsed = Date.now() - timestamp;
+            const cooldown = 15 * 60 * 1000;
+            if (elapsed < cooldown) {
                 setHasVoted(true);
+                // Re-enable the prompt once the cooldown expires
+                const timer = setTimeout(() => setHasVoted(false), cooldown - elapsed);
+                return () => clearTimeout(timer);
             }
         }
     }, [id]);
@@ -84,7 +89,7 @@ export default function IncidentCard({
         }
     };
 
-    const showFeedback = status !== 'resolved' && !hasVoted && (!officialStatus || officialStatus === 'unreviewed');
+    const showFeedback = status !== 'resolved' && !hasVoted;
 
     return (
         <div className="group relative rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 transition-all hover:bg-[var(--color-bg-subtle)] hover:shadow-lg">
