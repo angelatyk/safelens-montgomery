@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/lib/context/UserContext";
+
 export default function DashboardLayout({
     children,
 }: {

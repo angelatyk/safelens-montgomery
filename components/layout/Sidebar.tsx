@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { useUser } from "@/lib/context/UserContext";
 
 interface NavItem {
     name: string;
@@ -56,6 +56,7 @@ export default function Sidebar({
 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const { supabase } = useUser();
     const [activeCount, setActiveCount] = useState<number | null>(null);
 
     const fetchActiveCount = async () => {
@@ -88,16 +89,11 @@ export default function Sidebar({
     const navItems = role === "official" ? OFFICIAL_NAV : RESIDENT_NAV;
 
     const handleSignOut = async () => {
-        try {
-            await fetch("/api/auth/signout", {
-                method: "POST",
-            });
-        } finally {
-            // Also call client-side signout as fallback and to clear local state immediately
-            await supabase.auth.signOut();
-            router.push("/");
-            router.refresh();
-        }
+        await supabase.auth.signOut();
+        router.push("/");
+        router.refresh();
+        // Fire and forget the server-side signout — don't await it
+        fetch("/api/auth/signout", { method: "POST" }).catch(() => { });
     };
 
     return (

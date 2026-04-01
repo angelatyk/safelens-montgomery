@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckBadgeIcon } from "@heroicons/react/24/solid";
-import { supabase } from "@/lib/supabase/client";
+import { useUser } from "@/lib/context/UserContext";
 
 interface VerifiedBadgeProps {
     id: string;
@@ -11,6 +11,7 @@ interface VerifiedBadgeProps {
 }
 
 export default function VerifiedBadge({ id, table = 'resident_reports', initialStatus = 'submitted' }: VerifiedBadgeProps) {
+    const { supabase } = useUser();
     const [status, setStatus] = useState(initialStatus);
 
     useEffect(() => {

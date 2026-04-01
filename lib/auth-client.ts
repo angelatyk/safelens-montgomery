@@ -1,5 +1,5 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { supabase } from "@/lib/supabase/client";
+// Removed unused import
 
 /**
  * Client-side auth helpers — safe to import in Client Components.
@@ -19,7 +19,7 @@ function getRedirectPath(role: string | null): string {
  * Fetches the authenticated user's role and redirects to the correct dashboard.
  * Call this after a successful sign-in in any Client Component.
  */
-export async function redirectAfterLogin(router: AppRouterInstance): Promise<void> {
+export async function redirectAfterLogin(router: AppRouterInstance, supabase: any): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
